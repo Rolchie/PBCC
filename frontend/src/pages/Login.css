@@ -1,0 +1,168 @@
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  /* Diagonal gradient sampled from the manuscript's login prototype
+     (Appendix J). Replace with the real campus photo + overlay when
+     that asset is available — see the note in Login.jsx. */
+  background: linear-gradient(135deg, #1f46de 0%, #14672f 100%);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--pbcc-white);
+  border-radius: 16px;
+  box-shadow: 0 20px 50px rgba(0, 10, 40, 0.35);
+  padding: 40px 36px;
+  text-align: center;
+}
+
+.login-seal {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  margin: 0 auto 16px;
+  background: var(--pbcc-navy);
+  border: 3px solid var(--pbcc-gold);
+  color: var(--pbcc-gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+}
+/* TODO: swap .login-seal for the real PBCC seal image once the asset
+   is provided — e.g. <img src="/pbcc-seal.png" className="login-seal" /> */
+
+.login-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--pbcc-heading);
+  margin: 0 0 24px;
+}
+
+.login-page form {
+  text-align: left;
+}
+
+.login-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pbcc-heading);
+  margin-bottom: 6px;
+}
+
+.login-page input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 14px;
+  margin-bottom: 18px;
+  border: 1px solid var(--pbcc-border);
+  border-radius: 8px;
+  font-size: 15px;
+  font-family: inherit;
+  background: var(--pbcc-white);
+}
+
+.login-page input:focus {
+  outline: none;
+  border-color: var(--pbcc-blue);
+  box-shadow: 0 0 0 3px rgba(18, 48, 224, 0.15);
+}
+
+.login-page input:disabled {
+  opacity: 0.6;
+}
+
+.login-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: -6px 0 20px;
+  font-size: 13px;
+}
+
+.login-row a {
+  color: var(--pbcc-blue);
+  text-decoration: none;
+}
+
+.login-row a:hover {
+  text-decoration: underline;
+}
+
+.login-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--pbcc-text-muted);
+}
+
+.login-error {
+  color: var(--pbcc-red);
+  background: var(--pbcc-red-bg);
+  border: 1px solid #f3b8b6;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  margin: -4px 0 18px;
+}
+
+.login-submit {
+  width: 100%;
+  padding: 13px;
+  background: var(--pbcc-gold-cta);
+  color: var(--pbcc-navy);
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.login-submit:hover:not(:disabled) {
+  background: var(--pbcc-gold-cta-hover);
+}
+
+.login-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.login-secondary {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--pbcc-white);
+  color: var(--pbcc-blue);
+  border: 1px solid var(--pbcc-blue);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  text-align: center;
+}
+
+.login-secondary:hover {
+  background: var(--pbcc-blue-bg);
+}
+
+.login-back {
+  display: block;
+  margin-top: 18px;
+  font-size: 13px;
+  color: var(--pbcc-blue);
+  text-decoration: none;
+}
+
+.login-back:hover {
+  text-decoration: underline;
+}

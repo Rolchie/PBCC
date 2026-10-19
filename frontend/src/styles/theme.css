@@ -1,0 +1,41 @@
+/*
+ * Design tokens sampled directly from the approved capstone manuscript's
+ * UI prototypes (Figures 12–15, Appendix J). These are not arbitrary —
+ * every hex value below was pixel-sampled from the actual defended
+ * screenshots, so any future page should pull colors from here rather
+ * than introducing new ones.
+ */
+:root {
+  /* Brand navy — sidebar, header, footer on every authenticated screen */
+  --pbcc-navy: #001347;
+  --pbcc-navy-light: #012e7b; /* active sidebar item background */
+
+  /* Primary action blue — buttons, links */
+  --pbcc-blue: #1230e0;
+  --pbcc-blue-hover: #0e26b8;
+
+  /* Gold/amber accent — seal ring, active-nav border, login CTA */
+  --pbcc-gold: #d98a16;
+  --pbcc-gold-cta: #f0a90b;
+  --pbcc-gold-cta-hover: #d6960a;
+
+  /* Status colors */
+  --pbcc-green: #379244;
+  --pbcc-green-bg: #eaf7ee;
+  --pbcc-orange: #fd6f1c;
+  --pbcc-orange-bg: #fdf3e4;
+  --pbcc-red: #ff3431;
+  --pbcc-red-bg: #fdecec;
+  --pbcc-purple: #7c4fe0;
+  --pbcc-purple-bg: #f1eefd;
+  --pbcc-blue-bg: #eaf1fd;
+
+  /* Text */
+  --pbcc-heading: #0a1450;
+  --pbcc-text: #1c1c1c;
+  --pbcc-text-muted: #6b6f7c;
+
+  /* Surfaces */
+  --pbcc-white: #ffffff;
+  --pbcc-border: #e2e4ea;
+}
