@@ -1,34 +1,40 @@
+
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
+import DashboardSkeleton from './DashboardSkeleton';
 
-// Wrap any route element that requires a logged-in user:
-//   <Route path="/dashboard" element={
-//     <ProtectedRoute><Dashboard /></ProtectedRoute>
-//   } />
+// Protects routes that require an authenticated PBCC user.
+// Optionally restricts access to specific roles.
 //
-// Optionally restrict to specific roles:
-//   <ProtectedRoute allowedRoles={['Faculty', 'Administrator']}>
-//
-// Guest/Public routes (e.g. the future Inquiry Assistant) should NOT
-// be wrapped in this component at all — they stay open to everyone.
+// Guest/Public routes should remain accessible without
+// authentication and should not use ProtectedRoute.
+
 function ProtectedRoute({ children, allowedRoles }) {
   const { isAuthenticated, loading, role } = useAuth();
   const location = useLocation();
 
+  // Show the PBCC skeleton while checking the user's session.
   if (loading) {
-    // Session bootstrap (AuthContext) is still checking for an
-    // existing valid token. Avoid redirecting prematurely.
-    return <p>Loading...</p>;
+    return <DashboardSkeleton />;
   }
 
+  // Redirect users who are not logged in.
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return (
+      <Navigate
+        to="/login"
+        state={{ from: location }}
+        replace
+      />
+    );
   }
 
+  // Prevent users from accessing another role's dashboard.
   if (allowedRoles && !allowedRoles.includes(role)) {
     return <Navigate to="/" replace />;
   }
 
+  // Display the authorized dashboard.
   return children;
 }
 

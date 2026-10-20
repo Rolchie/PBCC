@@ -1,9 +1,42 @@
 
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useContext, useEffect, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { AuthContext } from '../context/auth-context';
+import { ROLES } from '../utils/roles';
+import DashboardSkeleton from '../components/DashboardSkeleton';
 import './Login.css';
 
 const REMEMBER_EMAIL_KEY = 'pbcc-remembered-email';
+
+function getRememberedEmail() {
+  try {
+    return localStorage.getItem(REMEMBER_EMAIL_KEY) || '';
+  } catch {
+    return '';
+  }
+}
+
+function getDashboardPath(role) {
+  switch (role) {
+    case ROLES.STUDENT:
+      return '/student';
+
+    case ROLES.FACULTY:
+      return '/faculty';
+
+    case ROLES.REGISTRAR:
+      return '/registrar';
+
+    case ROLES.PROGRAM_OFFICE:
+      return '/program-office';
+
+    case ROLES.ADMIN:
+      return '/admin';
+
+    default:
+      return null;
+  }
+}
 
 function UserIcon() {
   return (
@@ -76,41 +109,64 @@ function PhoneIcon() {
   );
 }
 
-function getRememberedEmail() {
-  try {
-    return localStorage.getItem(REMEMBER_EMAIL_KEY) || '';
-  } catch {
-    return '';
-  }
-}
-
 export default function Login() {
+  const navigate = useNavigate();
+  const auth = useContext(AuthContext);
+
   const [email, setEmail] = useState(getRememberedEmail);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-
   const [showPassword, setShowPassword] = useState(false);
-
   const [rememberMe, setRememberMe] = useState(
     () => Boolean(getRememberedEmail())
   );
 
+  const [submitting, setSubmitting] = useState(false);
+  const [showSkeleton, setShowSkeleton] = useState(false);
+
+  // Prevent the automatic redirect from interrupting
+  // an active login attempt.
+  const loginInProgress = useRef(false);
+
+  const user = auth?.user;
+  const role = auth?.role;
+  const loading = auth?.loading ?? true;
+  const isAuthenticated = auth?.isAuthenticated ?? false;
+
+  // Redirect users who were already authenticated
+  // before opening the Login page.
+  useEffect(() => {
+    if (loading || !isAuthenticated || loginInProgress.current) {
+      return;
+    }
+
+    const destination = getDashboardPath(role);
+
+    if (destination) {
+      navigate(destination, { replace: true });
+    }
+  }, [loading, isAuthenticated, role, navigate]);
+
   function handleRememberMeChange(event) {
     const checked = event.target.checked;
-
     setRememberMe(checked);
 
     if (!checked) {
       try {
         localStorage.removeItem(REMEMBER_EMAIL_KEY);
       } catch {
-        // Browser storage may be unavailable.
+        // Storage may be unavailable.
       }
     }
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
+
+    if (loginInProgress.current) {
+      return;
+    }
+
     setError('');
 
     if (!email.trim() || !password) {
@@ -118,31 +174,79 @@ export default function Login() {
       return;
     }
 
-    try {
-      if (rememberMe) {
-        localStorage.setItem(
-          REMEMBER_EMAIL_KEY,
-          email.trim()
-        );
-      } else {
-        localStorage.removeItem(REMEMBER_EMAIL_KEY);
-      }
-    } catch {
-      // Continue if browser storage is unavailable.
+    if (!auth || typeof auth.login !== 'function') {
+      setError('Authentication is unavailable. Please try again later.');
+      return;
     }
 
-    // Your current login authentication is not connected.
-    // This must be replaced with your existing backend login.
-    setError(
-      'Login authentication is not connected yet. The existing AuthContext login function needs to be restored.'
-    );
+    loginInProgress.current = true;
+    setSubmitting(true);
+
+    // Display the skeleton while authentication is processing.
+    setShowSkeleton(true);
+
+    try {
+      const loggedInUser = await auth.login(
+        email.trim(),
+        password
+      );
+
+      const destination = getDashboardPath(loggedInUser?.role);
+
+      if (rememberMe) {
+        try {
+          localStorage.setItem(
+            REMEMBER_EMAIL_KEY,
+            email.trim()
+          );
+        } catch {
+          // Storage may be unavailable.
+        }
+      } else {
+        try {
+          localStorage.removeItem(REMEMBER_EMAIL_KEY);
+        } catch {
+          // Storage may be unavailable.
+        }
+      }
+
+      setPassword('');
+
+      if (!destination) {
+        setShowSkeleton(false);
+        setError(
+          'Login succeeded, but your account role is not recognized. Please contact the administrator.'
+        );
+        return;
+      }
+
+      // Keep the skeleton visible until navigation replaces
+      // this page with the authenticated dashboard.
+      navigate(destination, { replace: true });
+    } catch (err) {
+      // Failed logins return to the form and show the error.
+      setShowSkeleton(false);
+
+      setError(
+        err?.message ||
+          'Unable to log in. Please check your credentials and try again.'
+      );
+    } finally {
+      loginInProgress.current = false;
+      setSubmitting(false);
+    }
+  }
+
+  // Replace the login form with the dashboard skeleton
+  // while the login request is in progress.
+  if (showSkeleton) {
+    return <DashboardSkeleton />;
   }
 
   return (
     <div className="login-page">
       <main className="login-main">
         <div className="login-card">
-
           <div className="login-card-header">
             <img
               src="/pbcc-logo.png"
@@ -158,7 +262,6 @@ export default function Login() {
             onSubmit={handleSubmit}
             noValidate
           >
-
             {/* EMAIL ADDRESS */}
             <div className="login-form-group">
               <label
@@ -185,6 +288,7 @@ export default function Login() {
                     setError('');
                   }}
                   autoComplete="username"
+                  disabled={submitting}
                   required
                 />
               </div>
@@ -216,10 +320,10 @@ export default function Login() {
                     setError('');
                   }}
                   autoComplete="current-password"
+                  disabled={submitting}
                   required
                 />
 
-                {/* SHOW / HIDE PASSWORD BUTTON */}
                 <button
                   type="button"
                   className="login-password-toggle"
@@ -227,15 +331,11 @@ export default function Login() {
                     setShowPassword((previous) => !previous);
                   }}
                   aria-label={
-                    showPassword
-                      ? 'Hide password'
-                      : 'Show password'
+                    showPassword ? 'Hide password' : 'Show password'
                   }
                   aria-pressed={showPassword}
                   title={
-                    showPassword
-                      ? 'Hide password'
-                      : 'Show password'
+                    showPassword ? 'Hide password' : 'Show password'
                   }
                 >
                   <EyeIcon visible={showPassword} />
@@ -256,6 +356,7 @@ export default function Login() {
                   className="login-remember-checkbox"
                   checked={rememberMe}
                   onChange={handleRememberMeChange}
+                  disabled={submitting}
                 />
 
                 <span>Remember Me</span>
@@ -275,31 +376,24 @@ export default function Login() {
             <button
               type="submit"
               className="login-submit-button"
+              disabled={submitting || loading}
             >
-              Login
+              {submitting ? 'Signing in...' : 'Login'}
             </button>
-
           </form>
 
           <div className="login-card-bottom">
-            <p>
-              Authorized PBCC accounts only.
-            </p>
+            <p>Authorized PBCC accounts only.</p>
 
-            <Link
-              to="/"
-              className="login-back-link"
-            >
+            <Link to="/" className="login-back-link">
               ← Back to Public Page
             </Link>
           </div>
-
         </div>
       </main>
 
       <footer className="login-footer">
         <div className="login-footer-inner">
-
           <div
             className="login-footer-icons"
             aria-hidden="true"
@@ -314,7 +408,6 @@ export default function Login() {
             Pangantucan Bukidnon Community College.
             All Rights Reserved.
           </p>
-
         </div>
       </footer>
     </div>
