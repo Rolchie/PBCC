@@ -1,6 +1,17 @@
 
-import { useContext, useEffect, useRef, useState } from 'react';
+import UserManagement from '../../components/admin/UserManagement';
+import AuditLogs from '../../components/admin/AuditLogs';
+
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+
 import { useNavigate } from 'react-router-dom';
+
 import {
   LayoutDashboard,
   Users,
@@ -18,59 +29,46 @@ import {
   ChevronRight,
   Database,
   AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
 
 import { AuthContext } from '../../context/auth-context';
+import { adminDashboardApi } from '../../Services/api';
+
 import './AdminDashboard.css';
 
 const navigation = [
-  {
-    id: 'dashboard',
-    label: 'Dashboard',
-    icon: LayoutDashboard,
-  },
-  {
-    id: 'users',
-    label: 'User Management',
-    icon: Users,
-  },
-  {
-    id: 'reports',
-    label: 'Reports',
-    icon: ChartNoAxesColumn,
-  },
-  {
-    id: 'audit',
-    label: 'Audit Logs',
-    icon: History,
-  },
-  {
-    id: 'settings',
-    label: 'System Settings',
-    icon: Settings,
-  },
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'users', label: 'User Management', icon: Users },
+  { id: 'reports', label: 'Reports', icon: ChartNoAxesColumn },
+  { id: 'audit', label: 'Audit Logs', icon: History },
+  { id: 'settings', label: 'System Settings', icon: Settings },
 ];
 
 const statistics = [
   {
+    key: 'totalUsers',
     title: 'Total Users',
     icon: Users,
-    description: 'Awaiting database integration',
+    description: 'Registered PBCC user accounts',
   },
   {
+    key: 'activeAccounts',
     title: 'Active Accounts',
     icon: UserCheck,
-    description: 'Awaiting database integration',
+    description: 'Accounts currently marked active',
   },
   {
-    title: 'Enrollment Records',
+    key: 'subjectEnrollments',
+    title: 'Subject Enrollments',
     icon: GraduationCap,
-    description: 'Awaiting database integration',
+    description: 'Total subject-enrollment records',
   },
   {
-    title: 'Recent Activities',
+    key: 'recordedActivities',
+    title: 'Recorded Activities',
     icon: Activity,
-    description: 'Awaiting audit log integration',
+    description: 'Entries recorded in Audit Logs',
   },
 ];
 
@@ -94,7 +92,7 @@ const modules = [
     title: 'Audit Logs',
     icon: History,
     description:
-      'Review important system activities and user actions.',
+      'Review recorded account-management activities and user actions.',
   },
   {
     id: 'settings',
@@ -106,12 +104,8 @@ const modules = [
 ];
 
 const moduleDescriptions = {
-  users:
-    'User account creation, predefined role assignment, account status, and user listing will be implemented here.',
   reports:
     'Institutional reports will be connected to enrollment and academic records.',
-  audit:
-    'Audit records will appear here after the existing database table is connected to the backend.',
   settings:
     'Authorized system configuration options will be available here.',
 };
@@ -125,10 +119,13 @@ function AdminDashboard() {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
+  const [dashboardStats, setDashboardStats] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [statsError, setStatsError] = useState('');
+
   const logoutCancelRef = useRef(null);
   const logoutConfirmRef = useRef(null);
   const logoutTriggerRef = useRef(null);
-  const logoutDialogRef = useRef(null);
 
   const user = auth?.user;
   const logout = auth?.logout;
@@ -138,6 +135,44 @@ function AdminDashboard() {
   const currentSection =
     navigation.find((item) => item.id === activeSection) ||
     navigation[0];
+
+  const loadDashboardStats = useCallback(async () => {
+    setStatsLoading(true);
+    setStatsError('');
+
+    try {
+      const response = await adminDashboardApi.stats();
+      const stats = response.data?.stats;
+
+      if (
+        !stats ||
+        statistics.some(
+          (item) =>
+            typeof stats[item.key] !== 'number' ||
+            !Number.isFinite(stats[item.key])
+        )
+      ) {
+        throw new Error('Invalid dashboard statistics response.');
+      }
+
+      setDashboardStats(stats);
+    } catch (error) {
+      console.error('Dashboard statistics error:', error);
+
+      setStatsError(
+        error?.message ||
+          'Unable to load dashboard statistics.'
+      );
+    } finally {
+      setStatsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeSection === 'dashboard') {
+      loadDashboardStats();
+    }
+  }, [activeSection, loadDashboardStats]);
 
   function changeSection(section) {
     setActiveSection(section);
@@ -184,7 +219,6 @@ function AdminDashboard() {
     const previousFocus = document.activeElement;
 
     document.body.style.overflow = 'hidden';
-
     logoutCancelRef.current?.focus();
 
     function handleModalKeyDown(event) {
@@ -192,10 +226,12 @@ function AdminDashboard() {
         if (!loggingOut) {
           event.preventDefault();
           setShowLogoutModal(false);
+
           requestAnimationFrame(() => {
             logoutTriggerRef.current?.focus();
           });
         }
+
         return;
       }
 
@@ -206,7 +242,10 @@ function AdminDashboard() {
 
       if (!firstElement || !lastElement) return;
 
-      if (event.shiftKey && document.activeElement === firstElement) {
+      if (
+        event.shiftKey &&
+        document.activeElement === firstElement
+      ) {
         event.preventDefault();
         lastElement.focus();
       } else if (
@@ -222,7 +261,10 @@ function AdminDashboard() {
 
     return () => {
       document.body.style.overflow = previousOverflow;
-      document.removeEventListener('keydown', handleModalKeyDown);
+      document.removeEventListener(
+        'keydown',
+        handleModalKeyDown
+      );
 
       if (
         previousFocus instanceof HTMLElement &&
@@ -259,12 +301,19 @@ function AdminDashboard() {
           </div>
         </section>
 
-        <section className="admin-stats-grid">
+        <section
+          className="admin-stats-grid"
+          aria-busy={statsLoading}
+        >
           {statistics.map((stat) => {
             const Icon = stat.icon;
+            const value = dashboardStats?.[stat.key];
 
             return (
-              <div className="admin-stat-card" key={stat.title}>
+              <div
+                className="admin-stat-card"
+                key={stat.key}
+              >
                 <div className="admin-stat-top">
                   <span className="admin-stat-label">
                     {stat.title}
@@ -275,7 +324,16 @@ function AdminDashboard() {
                   </span>
                 </div>
 
-                <strong className="admin-stat-value">—</strong>
+                <strong
+                  className="admin-stat-value"
+                  aria-live="polite"
+                >
+                  {statsLoading && !dashboardStats
+                    ? '...'
+                    : typeof value === 'number'
+                      ? value.toLocaleString('en-PH')
+                      : '—'}
+                </strong>
 
                 <small>{stat.description}</small>
               </div>
@@ -283,13 +341,93 @@ function AdminDashboard() {
           })}
         </section>
 
+        {statsError && (
+          <div
+            role="alert"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 12,
+              marginTop: 16,
+              padding: '14px 16px',
+              border: '1px solid #efc5c5',
+              borderRadius: 10,
+              background: '#fff5f5',
+              color: '#a33131',
+              fontFamily: 'inherit',
+              fontSize: 13,
+            }}
+          >
+            <AlertCircle size={18} />
+
+            <span style={{ flex: 1 }}>
+              {statsError}
+              {dashboardStats
+                ? ' Showing the last successfully loaded values.'
+                : ''}
+            </span>
+
+            <button
+              type="button"
+              onClick={loadDashboardStats}
+              disabled={statsLoading}
+              style={{
+                padding: '7px 13px',
+                border: '1px solid #efc5c5',
+                borderRadius: 8,
+                background: '#fff',
+                color: '#a33131',
+                font: 'inherit',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            marginTop: 14,
+            marginBottom: 8,
+          }}
+        >
+          <button
+            type="button"
+            onClick={loadDashboardStats}
+            disabled={statsLoading}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '9px 14px',
+              border: '1px solid #dce4ee',
+              borderRadius: 9,
+              background: '#fff',
+              color: '#102a4c',
+              fontFamily: 'inherit',
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: statsLoading ? 'wait' : 'pointer',
+              opacity: statsLoading ? 0.65 : 1,
+            }}
+          >
+            <RefreshCw size={16} />
+            {statsLoading ? 'Refreshing...' : 'Refresh Statistics'}
+          </button>
+        </div>
+
         <section className="admin-modules-section">
           <div className="admin-section-heading">
             <h3>Administrative Modules</h3>
 
             <p>
-              Access the main administrative functions of the
-              college system.
+              Access the main administrative functions
+              of the college system.
             </p>
           </div>
 
@@ -352,6 +490,14 @@ function AdminDashboard() {
   function renderContent() {
     if (activeSection === 'dashboard') {
       return renderDashboard();
+    }
+
+    if (activeSection === 'users') {
+      return <UserManagement />;
+    }
+
+    if (activeSection === 'audit') {
+      return <AuditLogs />;
     }
 
     return renderPendingModule();
@@ -517,8 +663,8 @@ function AdminDashboard() {
           </main>
 
           <footer className="admin-footer">
-            © {new Date().getFullYear()} Pangantucan
-            Bukidnon Community College
+            © {new Date().getFullYear()}{' '}
+            Pangantucan Bukidnon Community College
           </footer>
         </div>
       </div>
@@ -526,7 +672,6 @@ function AdminDashboard() {
       {showLogoutModal && (
         <div className="admin-modal-overlay">
           <div
-            ref={logoutDialogRef}
             className="admin-logout-modal"
             role="alertdialog"
             aria-modal="true"
@@ -542,12 +687,14 @@ function AdminDashboard() {
             </h2>
 
             <p id="admin-logout-description">
-              Are you sure you want to log out? You will
-              need to sign in again to access your dashboard.
+              Are you sure you want to log out?
+              You will need to sign in again
+              to access your dashboard.
             </p>
 
             <div className="admin-modal-notice">
               <AlertCircle size={17} strokeWidth={1.8} />
+
               <span>
                 Your current session will be ended.
               </span>

@@ -3,7 +3,6 @@ import { useContext, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/auth-context';
 import { ROLES } from '../utils/roles';
-import DashboardSkeleton from '../components/DashboardSkeleton';
 import './Login.css';
 
 const REMEMBER_EMAIL_KEY = 'pbcc-remembered-email';
@@ -122,19 +121,15 @@ export default function Login() {
   );
 
   const [submitting, setSubmitting] = useState(false);
-  const [showSkeleton, setShowSkeleton] = useState(false);
 
-  // Prevent the automatic redirect from interrupting
-  // an active login attempt.
+  // Prevent automatic redirects from interrupting login attempts.
   const loginInProgress = useRef(false);
 
-  const user = auth?.user;
   const role = auth?.role;
   const loading = auth?.loading ?? true;
   const isAuthenticated = auth?.isAuthenticated ?? false;
 
-  // Redirect users who were already authenticated
-  // before opening the Login page.
+  // Redirect users who are already authenticated.
   useEffect(() => {
     if (loading || !isAuthenticated || loginInProgress.current) {
       return;
@@ -182,10 +177,8 @@ export default function Login() {
     loginInProgress.current = true;
     setSubmitting(true);
 
-    // Display the skeleton while authentication is processing.
-    setShowSkeleton(true);
-
     try {
+      // Verify credentials without displaying the dashboard skeleton.
       const loggedInUser = await auth.login(
         email.trim(),
         password
@@ -213,20 +206,14 @@ export default function Login() {
       setPassword('');
 
       if (!destination) {
-        setShowSkeleton(false);
         setError(
           'Login succeeded, but your account role is not recognized. Please contact the administrator.'
         );
         return;
       }
 
-      // Keep the skeleton visible until navigation replaces
-      // this page with the authenticated dashboard.
       navigate(destination, { replace: true });
     } catch (err) {
-      // Failed logins return to the form and show the error.
-      setShowSkeleton(false);
-
       setError(
         err?.message ||
           'Unable to log in. Please check your credentials and try again.'
@@ -235,12 +222,6 @@ export default function Login() {
       loginInProgress.current = false;
       setSubmitting(false);
     }
-  }
-
-  // Replace the login form with the dashboard skeleton
-  // while the login request is in progress.
-  if (showSkeleton) {
-    return <DashboardSkeleton />;
   }
 
   return (

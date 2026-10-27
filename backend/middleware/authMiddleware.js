@@ -34,14 +34,15 @@ async function authenticateUser(req, res, next) {
             });
         }
 
-        console.log('Application user from database:', applicationUser);
 
-        if (applicationUser.status !== 'active') {
-            return res.status(403).json({
-                message: 'User account is not active.'
-            });
-        }
-
+       if (
+            typeof applicationUser.status !== 'string' ||
+            applicationUser.status.trim().toLowerCase() !== 'active'
+        ) {
+        return res.status(403).json({
+        message: 'User account is not active.'
+        });
+    }
         req.user = {
             ...data.user,
             user_id: applicationUser.user_id,
