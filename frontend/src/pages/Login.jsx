@@ -1,6 +1,6 @@
 
 import { useContext, useEffect, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/auth-context';
 import { ROLES } from '../utils/roles';
 import './Login.css';
@@ -110,6 +110,7 @@ function PhoneIcon() {
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const auth = useContext(AuthContext);
 
   const [email, setEmail] = useState(getRememberedEmail);
@@ -119,7 +120,6 @@ export default function Login() {
   const [rememberMe, setRememberMe] = useState(
     () => Boolean(getRememberedEmail())
   );
-
   const [submitting, setSubmitting] = useState(false);
 
   // Prevent automatic redirects from interrupting login attempts.
@@ -128,10 +128,19 @@ export default function Login() {
   const role = auth?.role;
   const loading = auth?.loading ?? true;
   const isAuthenticated = auth?.isAuthenticated ?? false;
+  const mustChangePassword = auth?.mustChangePassword ?? false;
 
   // Redirect users who are already authenticated.
+  // New users must change their initial password first.
   useEffect(() => {
     if (loading || !isAuthenticated || loginInProgress.current) {
+      return;
+    }
+
+    if (mustChangePassword) {
+      navigate('/change-initial-password', {
+        replace: true,
+      });
       return;
     }
 
@@ -140,7 +149,13 @@ export default function Login() {
     if (destination) {
       navigate(destination, { replace: true });
     }
-  }, [loading, isAuthenticated, role, navigate]);
+  }, [
+    loading,
+    isAuthenticated,
+    role,
+    mustChangePassword,
+    navigate,
+  ]);
 
   function handleRememberMeChange(event) {
     const checked = event.target.checked;
@@ -178,13 +193,18 @@ export default function Login() {
     setSubmitting(true);
 
     try {
-      // Verify credentials without displaying the dashboard skeleton.
+      // Verify credentials using the existing AuthContext.
       const loggedInUser = await auth.login(
         email.trim(),
         password
       );
 
-      const destination = getDashboardPath(loggedInUser?.role);
+      // New accounts must change their initial password
+      // before accessing their assigned dashboard.
+      const destination =
+        loggedInUser?.must_change_password === true
+          ? '/change-initial-password'
+          : getDashboardPath(loggedInUser?.role);
 
       if (rememberMe) {
         try {
@@ -223,6 +243,9 @@ export default function Login() {
       setSubmitting(false);
     }
   }
+
+  const passwordChanged =
+    location.state?.passwordChanged === true;
 
   return (
     <div className="login-page">
@@ -344,6 +367,27 @@ export default function Login() {
               </label>
             </div>
 
+            {/* SUCCESS MESSAGE AFTER PASSWORD CHANGE */}
+            {passwordChanged && (
+              <div
+                role="status"
+                style={{
+                  padding: '12px',
+                  marginBottom: '12px',
+                  borderRadius: '8px',
+                  background: '#eef6ef',
+                  color: '#216e39',
+                  textAlign: 'center',
+                  fontSize: '14px',
+                  lineHeight: 1.5,
+                }}
+              >
+                Password changed successfully.
+                Please log in with your new password.
+              </div>
+            )}
+
+            {/* LOGIN ERROR MESSAGE */}
             {error && (
               <div
                 id="login-error"

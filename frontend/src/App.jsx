@@ -6,6 +6,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import ComingSoon from './pages/ComingSoon';
 import NotFound from './pages/NotFound';
+import ChangeInitialPassword from './pages/ChangeInitialPassword';
 import StudentDashboard from './pages/dashboards/StudentDashboard';
 import FacultyDashboard from './pages/dashboards/FacultyDashboard';
 import RegistrarDashboard from './pages/dashboards/RegistrarDashboard';
@@ -19,6 +20,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
+
           <Route
             path="/register"
             element={
@@ -28,6 +30,7 @@ function App() {
               />
             }
           />
+
           <Route
             path="/forgot-password"
             element={
@@ -39,6 +42,15 @@ function App() {
           />
 
           <Route
+            path="/change-initial-password"
+            element={
+              <ProtectedRoute allowPasswordChange>
+                <ChangeInitialPassword />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
             path="/student"
             element={
               <ProtectedRoute allowedRoles={[ROLES.STUDENT]}>
@@ -46,6 +58,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/faculty"
             element={
@@ -54,6 +67,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/registrar"
             element={
@@ -62,6 +76,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/program-office"
             element={
@@ -70,6 +85,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/admin"
             element={

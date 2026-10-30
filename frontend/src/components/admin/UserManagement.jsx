@@ -1,5 +1,12 @@
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+
 import {
   Users,
   UserPlus,
@@ -13,8 +20,6 @@ import {
   RefreshCw,
   Pencil,
   CheckCircle2,
-  Eye,
-  EyeOff,
   LoaderCircle,
 } from 'lucide-react';
 
@@ -33,10 +38,11 @@ const ROLE_OPTIONS = [
 const STATUS_OPTIONS = ['active', 'inactive'];
 
 const EMPTY_CREATE_FORM = {
+  first_name: '',
+  middle_name: '',
+  last_name: '',
   email: '',
-  password: '',
   role: 'Student',
-  status: 'active',
 };
 
 function getErrorMessage(error) {
@@ -48,6 +54,16 @@ function getErrorMessage(error) {
 
 function normalizeStatus(status) {
   return String(status || '').trim().toLowerCase();
+}
+
+function getFullName(user) {
+  return [
+    user.first_name,
+    user.middle_name,
+    user.last_name,
+  ]
+    .filter(Boolean)
+    .join(' ');
 }
 
 export default function UserManagement() {
@@ -67,16 +83,15 @@ export default function UserManagement() {
   const [modalMode, setModalMode] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
 
-  const [createForm, setCreateForm] = useState(
-    EMPTY_CREATE_FORM
-  );
+  const [createForm, setCreateForm] = useState({
+    ...EMPTY_CREATE_FORM,
+  });
 
   const [editForm, setEditForm] = useState({
     role: 'Student',
     status: 'active',
   });
 
-  const [showPassword, setShowPassword] = useState(false);
   const [modalError, setModalError] = useState('');
 
   const modalRef = useRef(null);
@@ -114,7 +129,11 @@ export default function UserManagement() {
         user.username || ''
       ).toLowerCase();
 
-      const matchesSearch = username.includes(query);
+      const fullName = getFullName(user).toLowerCase();
+
+      const matchesSearch =
+        username.includes(query) ||
+        fullName.includes(query);
 
       const matchesRole =
         roleFilter === 'all' ||
@@ -148,8 +167,8 @@ export default function UserManagement() {
 
   function openCreateModal(event) {
     triggerRef.current = event?.currentTarget || null;
+
     setModalError('');
-    setShowPassword(false);
     setCreateForm({ ...EMPTY_CREATE_FORM });
     setSelectedUser(null);
     setModalMode('create');
@@ -157,6 +176,7 @@ export default function UserManagement() {
 
   function openEditModal(user, event) {
     triggerRef.current = event?.currentTarget || null;
+
     setModalError('');
     setSelectedUser(user);
 
@@ -174,7 +194,6 @@ export default function UserManagement() {
     setModalMode(null);
     setSelectedUser(null);
     setModalError('');
-    setShowPassword(false);
 
     requestAnimationFrame(() => {
       triggerRef.current?.focus();
@@ -231,7 +250,10 @@ export default function UserManagement() {
     return () => {
       cancelAnimationFrame(frame);
       document.body.style.overflow = previousOverflow;
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener(
+        'keydown',
+        handleKeyDown
+      );
     };
   }, [modalMode, saving]);
 
@@ -240,22 +262,34 @@ export default function UserManagement() {
 
     if (saving) return;
 
+    const firstName = createForm.first_name.trim();
+    const middleName = createForm.middle_name.trim();
+    const lastName = createForm.last_name.trim();
     const email = createForm.email.trim().toLowerCase();
 
-    if (!email || !createForm.password) {
-      setModalError('Email and password are required.');
-      return;
-    }
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setModalError('Please enter a valid email address.');
-      return;
-    }
-
-    if (createForm.password.length < 8) {
+    if (!firstName || !lastName) {
       setModalError(
-        'Password must contain at least 8 characters.'
+        'First name and last name are required.'
       );
+      return;
+    }
+
+    if (!email) {
+      setModalError('Email address is required.');
+      return;
+    }
+
+    if (
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    ) {
+      setModalError(
+        'Please enter a valid email address.'
+      );
+      return;
+    }
+
+    if (!ROLE_OPTIONS.includes(createForm.role)) {
+      setModalError('Please select a valid user role.');
       return;
     }
 
@@ -265,17 +299,20 @@ export default function UserManagement() {
 
     try {
       await adminUsersApi.create({
+        first_name: firstName,
+        middle_name: middleName,
+        last_name: lastName,
         email,
-        password: createForm.password,
         role: createForm.role,
-        status: createForm.status,
       });
 
       setModalMode(null);
       setCreateForm({ ...EMPTY_CREATE_FORM });
-      setShowPassword(false);
 
-      setSuccess('User account created successfully.');
+      setSuccess(
+        'User account created successfully. The initial password is assigned automatically. The user must change it on first login.'
+      );
+
       await loadUsers();
     } catch (err) {
       setModalError(getErrorMessage(err));
@@ -291,8 +328,10 @@ export default function UserManagement() {
 
     if (
       isEditingSelf &&
-      (editForm.role !== 'Administrator' ||
-        editForm.status !== 'active')
+      (
+        editForm.role !== 'Administrator' ||
+        editForm.status !== 'active'
+      )
     ) {
       setModalError(
         'You cannot remove your own Administrator access.'
@@ -316,13 +355,23 @@ export default function UserManagement() {
       setModalMode(null);
       setSelectedUser(null);
 
-      setSuccess('User account updated successfully.');
+      setSuccess(
+        'User account updated successfully.'
+      );
+
       await loadUsers();
     } catch (err) {
       setModalError(getErrorMessage(err));
     } finally {
       setSaving(false);
     }
+  }
+
+  function updateCreateField(field, value) {
+    setCreateForm((previous) => ({
+      ...previous,
+      [field]: value,
+    }));
   }
 
   return (
@@ -353,7 +402,10 @@ export default function UserManagement() {
       </section>
 
       {error && (
-        <div className="pbcc-users-feedback is-error" role="alert">
+        <div
+          className="pbcc-users-feedback is-error"
+          role="alert"
+        >
           <AlertCircle size={18} />
           <span>{error}</span>
         </div>
@@ -365,7 +417,9 @@ export default function UserManagement() {
           role="status"
         >
           <CheckCircle2 size={18} />
+
           <span>{success}</span>
+
           <button
             type="button"
             onClick={() => setSuccess('')}
@@ -383,7 +437,10 @@ export default function UserManagement() {
             <Users size={21} />
           </div>
 
-          <strong>{loading ? '—' : users.length}</strong>
+          <strong>
+            {loading ? '—' : users.length}
+          </strong>
+
           <small>Registered PBCC accounts</small>
         </div>
 
@@ -393,7 +450,10 @@ export default function UserManagement() {
             <ShieldCheck size={21} />
           </div>
 
-          <strong>{loading ? '—' : activeCount}</strong>
+          <strong>
+            {loading ? '—' : activeCount}
+          </strong>
+
           <small>Accounts with active status</small>
         </div>
 
@@ -403,7 +463,10 @@ export default function UserManagement() {
             <UserRound size={21} />
           </div>
 
-          <strong>{loading ? '—' : inactiveCount}</strong>
+          <strong>
+            {loading ? '—' : inactiveCount}
+          </strong>
+
           <small>Accounts with inactive status</small>
         </div>
       </section>
@@ -412,6 +475,7 @@ export default function UserManagement() {
         <div className="pbcc-users-panel-heading">
           <div>
             <h3>System Accounts</h3>
+
             <p>
               Search and filter accounts by role and status.
             </p>
@@ -433,7 +497,11 @@ export default function UserManagement() {
             >
               <RefreshCw
                 size={18}
-                className={loading ? 'pbcc-users-spinning' : ''}
+                className={
+                  loading
+                    ? 'pbcc-users-spinning'
+                    : ''
+                }
               />
             </button>
           </div>
@@ -442,13 +510,14 @@ export default function UserManagement() {
         <div className="pbcc-users-filters">
           <label className="pbcc-users-search">
             <Search size={18} />
+
             <input
               type="search"
               value={search}
               onChange={(event) =>
                 setSearch(event.target.value)
               }
-              placeholder="Search by username or email"
+              placeholder="Search by name, username or email"
               aria-label="Search users"
             />
           </label>
@@ -502,85 +571,119 @@ export default function UserManagement() {
 
             <tbody>
               {!loading &&
-                filteredUsers.map((user) => (
-                  <tr key={user.user_id}>
-                    <td>
-                      <div className="pbcc-users-person">
-                        <span className="pbcc-users-avatar">
-                          <UserRound size={18} />
+                filteredUsers.map((user) => {
+                  const fullName = getFullName(user);
+
+                  return (
+                    <tr key={user.user_id}>
+                      <td>
+                        <div className="pbcc-users-person">
+                          <span className="pbcc-users-avatar">
+                            <UserRound size={18} />
+                          </span>
+
+                          <span>
+                            {fullName ? (
+                              <span>
+                                <strong>{fullName}</strong>
+                                <small
+                                  style={{
+                                    display: 'block',
+                                    marginTop: '4px',
+                                    color: '#64748b',
+                                  }}
+                                >
+                                  {user.username}
+                                </small>
+                              </span>
+                            ) : (
+                              user.username || 'Unnamed user'
+                            )}
+                          </span>
+                        </div>
+                      </td>
+
+                      <td>
+                        <span className="pbcc-users-role">
+                          {user.role || 'Unassigned'}
                         </span>
+                      </td>
 
-                        <span>
-                          {user.username || 'Unnamed user'}
+                      <td>
+                        <span
+                          className={`pbcc-users-status ${
+                            normalizeStatus(user.status) ===
+                            'active'
+                              ? 'is-active'
+                              : 'is-inactive'
+                          }`}
+                        >
+                          {user.status || 'Unknown'}
                         </span>
-                      </div>
-                    </td>
+                      </td>
 
-                    <td>
-                      <span className="pbcc-users-role">
-                        {user.role || 'Unassigned'}
-                      </span>
-                    </td>
+                      <td>
+                        {user.user_id ?? '—'}
+                      </td>
 
-                    <td>
-                      <span
-                        className={`pbcc-users-status ${
-                          normalizeStatus(user.status) === 'active'
-                            ? 'is-active'
-                            : 'is-inactive'
-                        }`}
-                      >
-                        {user.status || 'Unknown'}
-                      </span>
-                    </td>
-
-                    <td>{user.user_id ?? '—'}</td>
-
-                    <td>
-                      <button
-                        type="button"
-                        className="pbcc-users-edit-button"
-                        onClick={(event) =>
-                          openEditModal(user, event)
-                        }
-                      >
-                        <Pencil size={15} />
-                        Edit
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                      <td>
+                        <button
+                          type="button"
+                          className="pbcc-users-edit-button"
+                          onClick={(event) =>
+                            openEditModal(user, event)
+                          }
+                        >
+                          <Pencil size={15} />
+                          Edit
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
             </tbody>
           </table>
 
           {loading && (
-            <div className="pbcc-users-empty" role="status">
+            <div
+              className="pbcc-users-empty"
+              role="status"
+            >
               <LoaderCircle
                 size={34}
                 className="pbcc-users-spinning"
               />
+
               <h4>Loading accounts...</h4>
-              <p>Retrieving user records from PBCC.</p>
-            </div>
-          )}
-
-          {!loading && !error && filteredUsers.length === 0 && (
-            <div className="pbcc-users-empty">
-              <Database size={35} strokeWidth={1.5} />
-
-              <h4>
-                {users.length === 0
-                  ? 'No user accounts found'
-                  : 'No matching accounts'}
-              </h4>
 
               <p>
-                {users.length === 0
-                  ? 'No account records were returned by the backend.'
-                  : 'Try changing your search or filter settings.'}
+                Retrieving user records from PBCC.
               </p>
             </div>
           )}
+
+          {!loading &&
+            !error &&
+            filteredUsers.length === 0 && (
+              <div className="pbcc-users-empty">
+                <Database
+                  size={35}
+                  strokeWidth={1.5}
+                />
+
+                <h4>
+                  {users.length === 0
+                    ? 'No user accounts found'
+                    : 'No matching accounts'}
+                </h4>
+
+                <p>
+                  {users.length === 0
+                    ? 'No account records were returned by the backend.'
+                    : 'Try changing your search or filter settings.'}
+                </p>
+              </div>
+            )}
         </div>
       </section>
 
@@ -604,7 +707,10 @@ export default function UserManagement() {
                 <p>
                   {modalMode === 'create'
                     ? 'Create a new authorized PBCC system account.'
-                    : `Update access for ${selectedUser?.username || 'this account'}.`}
+                    : `Update access for ${
+                        selectedUser?.username ||
+                        'this account'
+                      }.`}
                 </p>
               </div>
 
@@ -641,17 +747,18 @@ export default function UserManagement() {
                 {modalMode === 'create' && (
                   <>
                     <label>
-                      Email Address
+                      First Name
                       <input
-                        type="email"
-                        value={createForm.email}
+                        type="text"
+                        value={createForm.first_name}
                         onChange={(event) =>
-                          setCreateForm((previous) => ({
-                            ...previous,
-                            email: event.target.value,
-                          }))
+                          updateCreateField(
+                            'first_name',
+                            event.target.value
+                          )
                         }
-                        placeholder="e.g., student@example.com"
+                        placeholder="Enter first name"
+                        maxLength={100}
                         autoComplete="off"
                         disabled={saving}
                         required
@@ -659,51 +766,65 @@ export default function UserManagement() {
                     </label>
 
                     <label>
-                      Initial Password
-                      <div className="pbcc-users-password-wrap">
-                        <input
-                          type={
-                            showPassword ? 'text' : 'password'
-                          }
-                          value={createForm.password}
-                          onChange={(event) =>
-                            setCreateForm((previous) => ({
-                              ...previous,
-                              password: event.target.value,
-                            }))
-                          }
-                          placeholder="At least 8 characters"
-                          autoComplete="new-password"
-                          minLength={8}
-                          disabled={saving}
-                          required
-                        />
+                      Middle Name (Optional)
+                      <input
+                        type="text"
+                        value={createForm.middle_name}
+                        onChange={(event) =>
+                          updateCreateField(
+                            'middle_name',
+                            event.target.value
+                          )
+                        }
+                        placeholder="Enter middle name"
+                        maxLength={100}
+                        autoComplete="off"
+                        disabled={saving}
+                      />
+                    </label>
 
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setShowPassword((previous) => !previous)
-                          }
-                          disabled={saving}
-                          aria-label={
-                            showPassword
-                              ? 'Hide password'
-                              : 'Show password'
-                          }
-                        >
-                          {showPassword ? (
-                            <EyeOff size={18} />
-                          ) : (
-                            <Eye size={18} />
-                          )}
-                        </button>
-                      </div>
+                    <label>
+                      Last Name
+                      <input
+                        type="text"
+                        value={createForm.last_name}
+                        onChange={(event) =>
+                          updateCreateField(
+                            'last_name',
+                            event.target.value
+                          )
+                        }
+                        placeholder="Enter last name"
+                        maxLength={100}
+                        autoComplete="off"
+                        disabled={saving}
+                        required
+                      />
+                    </label>
+
+                    <label>
+                      Email Address
+                      <input
+                        type="email"
+                        value={createForm.email}
+                        onChange={(event) =>
+                          updateCreateField(
+                            'email',
+                            event.target.value
+                          )
+                        }
+                        placeholder="e.g., student@example.com"
+                        autoComplete="off"
+                        disabled={saving}
+                        required
+                      />
                     </label>
                   </>
                 )}
 
                 <label>
                   User Role
+
                   <select
                     value={
                       modalMode === 'create'
@@ -714,10 +835,7 @@ export default function UserManagement() {
                       const value = event.target.value;
 
                       if (modalMode === 'create') {
-                        setCreateForm((previous) => ({
-                          ...previous,
-                          role: value,
-                        }));
+                        updateCreateField('role', value);
                       } else {
                         setEditForm((previous) => ({
                           ...previous,
@@ -728,47 +846,43 @@ export default function UserManagement() {
                     disabled={saving || isEditingSelf}
                   >
                     {ROLE_OPTIONS.map((role) => (
-                      <option key={role} value={role}>
+                      <option
+                        key={role}
+                        value={role}
+                      >
                         {role}
                       </option>
                     ))}
                   </select>
                 </label>
 
-                <label>
-                  Account Status
-                  <select
-                    value={
-                      modalMode === 'create'
-                        ? createForm.status
-                        : editForm.status
-                    }
-                    onChange={(event) => {
-                      const value = event.target.value;
+                {modalMode === 'edit' && (
+                  <label>
+                    Account Status
 
-                      if (modalMode === 'create') {
-                        setCreateForm((previous) => ({
-                          ...previous,
-                          status: value,
-                        }));
-                      } else {
+                    <select
+                      value={editForm.status}
+                      onChange={(event) =>
                         setEditForm((previous) => ({
                           ...previous,
-                          status: value,
-                        }));
+                          status: event.target.value,
+                        }))
                       }
-                    }}
-                    disabled={saving || isEditingSelf}
-                  >
-                    {STATUS_OPTIONS.map((status) => (
-                      <option key={status} value={status}>
-                        {status === 'active'
-                          ? 'Active'
-                          : 'Inactive'}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                      disabled={saving || isEditingSelf}
+                    >
+                      {STATUS_OPTIONS.map((status) => (
+                        <option
+                          key={status}
+                          value={status}
+                        >
+                          {status === 'active'
+                            ? 'Active'
+                            : 'Inactive'}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
               </div>
 
               <div className="pbcc-users-modal-notice">
@@ -778,7 +892,7 @@ export default function UserManagement() {
                   {isEditingSelf
                     ? 'For security, you cannot change your own Administrator role or active status.'
                     : modalMode === 'create'
-                      ? 'The account will be created in Supabase Authentication and linked to PBCC. Share the initial password securely.'
+                      ? 'New accounts are automatically Active. The system assigns the initial password, and users must change it on their first login.'
                       : 'Changes to account role or status affect the user’s system access.'}
                 </span>
               </div>

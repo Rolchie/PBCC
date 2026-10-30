@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -44,6 +43,7 @@ api.interceptors.response.use(
 
     return Promise.reject({
       status,
+      code: error.response?.data?.code,
       message,
       raw: error,
     });
@@ -57,6 +57,17 @@ export const authApi = {
     api.post('/api/auth/login', { email, password }),
 
   me: () => api.get('/api/auth/me'),
+
+  changeInitialPassword: (
+    currentPassword,
+    newPassword,
+    confirmPassword
+  ) =>
+    api.post('/api/auth/change-initial-password', {
+      currentPassword,
+      newPassword,
+      confirmPassword,
+    }),
 };
 
 export const healthApi = {
@@ -66,12 +77,19 @@ export const healthApi = {
 export const adminUsersApi = {
   list: () => api.get('/api/admin/users'),
 
-  create: ({ email, password, role, status }) =>
+  create: ({
+    first_name,
+    middle_name,
+    last_name,
+    email,
+    role,
+  }) =>
     api.post('/api/admin/users', {
+      first_name,
+      middle_name,
+      last_name,
       email,
-      password,
       role,
-      status,
     }),
 
   update: (userId, changes) =>
@@ -91,8 +109,6 @@ export const adminAuditApi = {
     }),
 };
 
-
 export const adminDashboardApi = {
   stats: () => api.get('/api/admin/dashboard/stats'),
 };
-
