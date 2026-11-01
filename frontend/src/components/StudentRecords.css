@@ -11,7 +11,8 @@
 
 .student-records button,
 .student-records input,
-.student-records select {
+.student-records select,
+.student-records textarea {
   font: inherit;
 }
 
@@ -46,15 +47,20 @@
   line-height: 1.7;
 }
 
-.student-records-refresh {
+.student-records-heading-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.student-records-refresh,
+.student-records-add-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 9px;
   padding: 12px 16px;
-  background: white;
-  color: #102a4c;
-  border: 1px solid #dce4ef;
   border-radius: 10px;
   font-size: 13px;
   font-weight: 700;
@@ -62,13 +68,73 @@
   white-space: nowrap;
 }
 
+.student-records-refresh {
+  background: white;
+  color: #102a4c;
+  border: 1px solid #dce4ef;
+}
+
 .student-records-refresh:hover {
   background: #f6f9fd;
 }
 
-.student-records-refresh:disabled {
+.student-records-add-button {
+  background: #102a4c;
+  color: white;
+  border: 1px solid #102a4c;
+}
+
+.student-records-add-button:hover {
+  background: #183d69;
+}
+
+.student-records-refresh:disabled,
+.student-records-add-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.student-records-feedback {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.student-records-feedback svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.student-records-feedback span {
+  flex: 1;
+}
+
+.student-records-feedback.is-success {
+  background: #eef9f1;
+  border: 1px solid #ccebd5;
+  color: #226a3b;
+}
+
+.student-records-feedback.is-error {
+  background: #fff1f1;
+  border: 1px solid #f0caca;
+  color: #a43232;
+}
+
+.student-records-feedback button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
 }
 
 .student-records-summary {
@@ -453,6 +519,144 @@
   cursor: pointer;
 }
 
+/* ========================================
+   ADD STUDENT MODAL
+======================================== */
+
+.student-records-add-modal {
+  max-width: 820px;
+}
+
+.student-records-add-form {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.student-records-add-form .student-records-modal-body {
+  flex: 1;
+  min-height: 0;
+}
+
+.student-records-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.student-records-form-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #405570;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.student-records-form-grid input,
+.student-records-form-grid select,
+.student-records-form-grid textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 12px 13px;
+  border: 1px solid #dce4ef;
+  border-radius: 10px;
+  outline: none;
+  background: white;
+  color: #102a4c;
+  font-size: 13px;
+  font-weight: 400;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.student-records-form-grid textarea {
+  resize: vertical;
+  min-height: 90px;
+}
+
+.student-records-form-grid input:focus,
+.student-records-form-grid select:focus,
+.student-records-form-grid textarea:focus {
+  border-color: #d6a849;
+  box-shadow: 0 0 0 3px rgba(214, 168, 73, 0.12);
+}
+
+.student-records-form-grid input:disabled,
+.student-records-form-grid select:disabled,
+.student-records-form-grid textarea:disabled {
+  background: #f6f8fb;
+  color: #8190a5;
+  cursor: not-allowed;
+}
+
+.student-records-form-grid input::placeholder,
+.student-records-form-grid textarea::placeholder {
+  color: #9aa8ba;
+}
+
+.student-records-form-full {
+  grid-column: 1 / -1;
+}
+
+.student-records-form-help {
+  margin: -5px 0 0;
+  color: #9b741f;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.student-records-academic-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  margin: 18px 0;
+  padding: 14px 16px;
+  background: #fff9eb;
+  border: 1px solid #f0dfb5;
+  border-radius: 10px;
+  color: #82631f;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.student-records-academic-notice svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.student-records-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+}
+
+.student-records-form-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 19px;
+}
+
+.student-records-form-actions .student-records-cancel-button {
+  background: #f1f4f8;
+  color: #405570;
+}
+
+.student-records-form-actions .student-records-save-button {
+  background: #102a4c;
+  color: white;
+}
+
+.student-records-form-actions button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 @keyframes student-records-rotate {
   to {
     transform: rotate(360deg);
@@ -469,8 +673,13 @@
     align-items: flex-start;
   }
 
-  .student-records-refresh {
+  .student-records-heading-actions {
     width: 100%;
+  }
+
+  .student-records-refresh,
+  .student-records-add-button {
+    flex: 1;
   }
 
   .student-records-summary {
@@ -495,8 +704,30 @@
     width: 100%;
   }
 
-  .student-records-details-grid {
+  .student-records-details-grid,
+  .student-records-form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .student-records-form-full {
+    grid-column: auto;
+  }
+
+  .student-records-modal-backdrop {
+    padding: 10px;
+  }
+
+  .student-records-modal-header,
+  .student-records-modal-body {
+    padding: 20px;
+  }
+
+  .student-records-modal-footer {
+    padding: 15px 20px;
+  }
+
+  .student-records-form-actions button {
+    flex: 1;
   }
 }
 

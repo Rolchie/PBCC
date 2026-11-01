@@ -1,0 +1,1344 @@
+
+/* ========================================
+   PBCC REGISTRAR PERSONNEL PORTAL
+======================================== */
+
+.registrar-layout {
+  --registrar-navy: #102a4c;
+  --registrar-gold: #d6a849;
+  --registrar-border: #e1e7ef;
+  --registrar-muted: #718096;
+
+  display: flex;
+  min-height: 100vh;
+
+  background: #f4f7fb;
+  color: #172b45;
+
+  font-family: inherit;
+}
+
+.registrar-layout * {
+  box-sizing: border-box;
+}
+
+/* ========================================
+   SIDEBAR
+======================================== */
+
+.registrar-sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 30;
+
+  width: 270px;
+  height: 100vh;
+
+  display: flex;
+  flex-direction: column;
+
+  background-color: #102a4c;
+
+  background-image:
+    linear-gradient(
+      to bottom,
+      #102a4c 0%,
+      #102a4c 38%,
+      rgba(16, 42, 76, 0.96) 55%,
+      rgba(16, 42, 76, 0.78) 78%,
+      rgba(16, 42, 76, 0.65) 100%
+    ),
+    url('/pbcc-background.jpg');
+
+  background-size: cover;
+  background-position: center bottom;
+  background-repeat: no-repeat;
+
+  color: #ffffff;
+
+  box-shadow: 4px 0 24px rgba(
+    10,
+    29,
+    54,
+    0.08
+  );
+}
+
+/* ========================================
+   BRANDING
+======================================== */
+
+.registrar-brand {
+  min-height: 112px;
+
+  display: flex;
+  align-items: center;
+  gap: 13px;
+
+  padding: 23px 18px;
+
+  border-bottom: 1px solid rgba(
+    255,
+    255,
+    255,
+    0.12
+  );
+}
+
+.registrar-brand img {
+  width: 62px;
+  height: 62px;
+
+  flex-shrink: 0;
+
+  object-fit: cover;
+  object-position: center;
+
+  border-radius: 50%;
+  clip-path: circle(50% at 50% 50%);
+
+  background: transparent;
+  border: none;
+  padding: 0;
+
+  display: block;
+}
+
+.registrar-brand > div {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.registrar-brand strong {
+  color: #ffffff;
+
+  font-size: 23px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.registrar-brand span {
+  color: #e4bc5e;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.registrar-sidebar-close {
+  display: none;
+}
+
+/* ========================================
+   NAVIGATION
+======================================== */
+
+.registrar-sidebar-label {
+  padding: 28px 24px 12px;
+
+  color: #a8b8cc;
+
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.registrar-navigation {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  padding: 0 13px;
+}
+
+.registrar-nav-item {
+  width: 100%;
+  min-height: 48px;
+
+  display: flex;
+  align-items: center;
+  gap: 13px;
+
+  padding: 12px 15px;
+
+  border: none;
+  border-left: 3px solid transparent;
+  border-radius: 9px;
+
+  background: transparent;
+  color: #d7e2ef;
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.registrar-nav-item:hover {
+  background: rgba(
+    255,
+    255,
+    255,
+    0.09
+  );
+
+  color: #ffffff;
+}
+
+.registrar-nav-item > span {
+  flex: 1;
+}
+
+.registrar-nav-item.registrar-nav-active {
+  background: rgba(
+    214,
+    168,
+    73,
+    0.16
+  );
+
+  color: #f1c46d;
+
+  border-left-color: var(--registrar-gold);
+}
+
+.registrar-nav-item.registrar-nav-active:hover {
+  background: rgba(
+    214,
+    168,
+    73,
+    0.22
+  );
+}
+
+/* ========================================
+   SIDEBAR ACCOUNT AND LOGOUT
+======================================== */
+
+.registrar-sidebar-bottom {
+  margin-top: auto;
+
+  padding: 16px 15px 22px;
+
+  border-top: 1px solid rgba(
+    255,
+    255,
+    255,
+    0.12
+  );
+}
+
+.registrar-sidebar-account {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+
+  min-width: 0;
+
+  padding: 10px 8px 18px;
+}
+
+.registrar-account-avatar,
+.registrar-topbar-avatar {
+  width: 40px;
+  height: 40px;
+
+  flex-shrink: 0;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 50%;
+}
+
+.registrar-account-avatar {
+  background: var(--registrar-gold);
+  color: var(--registrar-navy);
+}
+
+.registrar-sidebar-account > div:last-child,
+.registrar-topbar-account > div:last-child {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.registrar-sidebar-account strong,
+.registrar-topbar-account strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  font-size: 12px;
+}
+
+.registrar-sidebar-account span {
+  color: #d1dbe8;
+  font-size: 11px;
+}
+
+.registrar-logout-button {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  padding: 12px;
+
+  border: 1px solid rgba(
+    255,
+    255,
+    255,
+    0.2
+  );
+
+  border-radius: 9px;
+
+  background: rgba(
+    255,
+    255,
+    255,
+    0.06
+  );
+
+  color: #ffffff;
+
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.registrar-logout-button:hover {
+  background: rgba(
+    255,
+    255,
+    255,
+    0.14
+  );
+}
+
+/* ========================================
+   MAIN LAYOUT
+======================================== */
+
+.registrar-main {
+  width: calc(100% - 270px);
+  min-width: 0;
+  min-height: 100vh;
+
+  margin-left: 270px;
+
+  display: flex;
+  flex-direction: column;
+}
+
+/* ========================================
+   TOP NAVBAR
+======================================== */
+
+.registrar-topbar {
+  min-height: 86px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+
+  padding: 18px 34px;
+
+  background: #ffffff;
+
+  border-bottom: 1px solid var(--registrar-border);
+}
+
+.registrar-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+
+  min-width: 0;
+}
+
+.registrar-topbar h1 {
+  margin: 0 0 5px;
+
+  color: var(--registrar-navy);
+
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.registrar-topbar p {
+  margin: 0;
+
+  color: var(--registrar-muted);
+
+  font-size: 12px;
+}
+
+.registrar-topbar-account {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.registrar-topbar-avatar {
+  background: #edf2f8;
+  color: var(--registrar-navy);
+}
+
+.registrar-topbar-account strong {
+  color: var(--registrar-navy);
+}
+
+.registrar-topbar-account span {
+  color: var(--registrar-muted);
+  font-size: 11px;
+}
+
+.registrar-menu-button {
+  display: none;
+}
+
+/* ========================================
+   CONTENT
+======================================== */
+
+.registrar-content {
+  width: 100%;
+  max-width: 1500px;
+
+  flex: 1;
+
+  margin: 0 auto;
+  padding: 30px 34px 42px;
+}
+
+/* ========================================
+   WELCOME BANNER
+======================================== */
+
+.registrar-welcome {
+  min-height: 190px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 25px;
+
+  padding: 34px 38px;
+
+  border-radius: 15px;
+
+  background: linear-gradient(
+    120deg,
+    #102a4c,
+    #1b426d
+  );
+
+  color: #ffffff;
+  overflow: hidden;
+}
+
+.registrar-eyebrow {
+  display: inline-block;
+
+  margin-bottom: 12px;
+
+  color: #e9bd5a;
+
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.7px;
+}
+
+.registrar-welcome h2 {
+  margin: 0 0 12px;
+
+  font-size: clamp(
+    23px,
+    3vw,
+    30px
+  );
+
+  font-weight: 800;
+}
+
+.registrar-welcome p {
+  max-width: 620px;
+
+  margin: 0;
+
+  color: #d6e0ec;
+
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.registrar-welcome-emblem {
+  width: 140px;
+  height: 140px;
+
+  flex-shrink: 0;
+
+  display: grid;
+  place-items: center;
+
+  border: 2px solid rgba(
+    214,
+    168,
+    73,
+    0.45
+  );
+
+  border-radius: 50%;
+
+  padding: 9px;
+}
+
+.registrar-welcome-emblem img {
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+
+  border-radius: 50%;
+  clip-path: circle(50% at 50% 50%);
+}
+
+/* ========================================
+   OVERVIEW CARDS
+======================================== */
+
+.registrar-overview-grid {
+  display: grid;
+
+  grid-template-columns: repeat(
+    4,
+    minmax(0, 1fr)
+  );
+
+  gap: 18px;
+
+  margin-top: 24px;
+}
+
+.registrar-overview-card,
+.registrar-panel {
+  background: #ffffff;
+
+  border: 1px solid var(--registrar-border);
+  border-radius: 13px;
+
+  box-shadow: 0 4px 18px rgba(
+    16,
+    42,
+    76,
+    0.035
+  );
+}
+
+.registrar-overview-card {
+  min-height: 155px;
+  padding: 22px;
+}
+
+.registrar-overview-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.registrar-overview-top > span:first-child {
+  color: #63738a;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.registrar-overview-icon {
+  width: 39px;
+  height: 39px;
+
+  flex-shrink: 0;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 10px;
+
+  background: #fdf6e6;
+  color: #b58722;
+}
+
+.registrar-overview-card > strong {
+  display: block;
+
+  margin: 12px 0 9px;
+
+  color: var(--registrar-navy);
+
+  font-size: 23px;
+  font-weight: 800;
+}
+
+.registrar-overview-card > small {
+  color: var(--registrar-muted);
+
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+/* ========================================
+   DASHBOARD COLUMNS
+======================================== */
+
+.registrar-dashboard-columns {
+  display: grid;
+
+  grid-template-columns: 1.25fr 1fr;
+
+  gap: 20px;
+
+  margin-top: 24px;
+}
+
+/* ========================================
+   PANELS
+======================================== */
+
+.registrar-panel {
+  padding: 24px;
+}
+
+.registrar-panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 15px;
+
+  padding-bottom: 19px;
+
+  border-bottom: 1px solid #e8edf3;
+
+  color: #b88a28;
+}
+
+.registrar-panel-heading h3 {
+  margin: 0 0 6px;
+
+  color: var(--registrar-navy);
+
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.registrar-panel-heading p {
+  margin: 0;
+
+  color: var(--registrar-muted);
+
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* ========================================
+   INFORMATION ROWS
+======================================== */
+
+.registrar-information-list {
+  display: flex;
+  flex-direction: column;
+
+  margin-top: 8px;
+}
+
+.registrar-information-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+
+  padding: 15px 0;
+
+  border-bottom: 1px solid #edf1f5;
+}
+
+.registrar-information-row:last-child {
+  border-bottom: none;
+}
+
+.registrar-information-row span {
+  color: #68788c;
+  font-size: 12px;
+}
+
+.registrar-information-row strong {
+  color: var(--registrar-navy);
+
+  font-size: 12px;
+  text-align: right;
+}
+
+/* ========================================
+   QUICK ACCESS
+======================================== */
+
+.registrar-quick-links {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+
+  padding-top: 18px;
+}
+
+.registrar-quick-link {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  gap: 13px;
+
+  padding: 13px 14px;
+
+  border: 1px solid #e5eaf1;
+  border-radius: 9px;
+
+  background: #fbfcfe;
+  color: var(--registrar-navy);
+
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+
+  cursor: pointer;
+}
+
+.registrar-quick-link:hover {
+  border-color: #d7b365;
+  background: #fffcf5;
+}
+
+.registrar-quick-link > span:nth-child(2) {
+  flex: 1;
+}
+
+.registrar-quick-icon {
+  width: 34px;
+  height: 34px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 8px;
+
+  background: #edf2f8;
+  color: #193a61;
+}
+
+/* ========================================
+   DEVELOPMENT NOTICE
+======================================== */
+
+.registrar-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+
+  margin-top: 24px;
+  padding: 19px 21px;
+
+  border: 1px solid #f0dfb5;
+  border-radius: 11px;
+
+  background: #fffaf0;
+  color: #a87918;
+}
+
+.registrar-notice strong {
+  display: block;
+
+  margin-bottom: 5px;
+
+  font-size: 13px;
+}
+
+.registrar-notice p {
+  margin: 0;
+
+  color: #806b45;
+
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+/* ========================================
+   SEARCH TOOLBAR
+======================================== */
+
+.registrar-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+
+  flex-wrap: wrap;
+
+  padding: 22px 0 6px;
+}
+
+.registrar-search-field {
+  width: 100%;
+  max-width: 390px;
+  min-height: 44px;
+
+  display: flex;
+  align-items: center;
+  gap: 11px;
+
+  padding: 0 13px;
+
+  border: 1px solid #dce4ee;
+  border-radius: 9px;
+
+  background: #ffffff;
+  color: #8793a3;
+}
+
+.registrar-search-field:focus-within {
+  border-color: var(--registrar-gold);
+}
+
+.registrar-search-field input {
+  width: 100%;
+  min-width: 0;
+
+  padding: 12px 0;
+
+  border: none;
+  outline: none;
+
+  background: transparent;
+  color: var(--registrar-navy);
+
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.registrar-preview-label {
+  display: inline-flex;
+
+  padding: 8px 13px;
+
+  border-radius: 20px;
+
+  background: #fffaf0;
+  color: #a87918;
+
+  font-size: 10px;
+  font-weight: 800;
+}
+
+/* ========================================
+   TABLES
+======================================== */
+
+.registrar-table-wrapper {
+  width: 100%;
+
+  overflow-x: auto;
+
+  margin-top: 20px;
+}
+
+.registrar-table {
+  width: 100%;
+  min-width: 720px;
+
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.registrar-table th {
+  padding: 15px 13px;
+
+  background: #f5f8fc;
+  color: #566982;
+
+  font-size: 11px;
+  font-weight: 800;
+
+  white-space: nowrap;
+}
+
+.registrar-table td {
+  padding: 12px;
+
+  border-bottom: 1px solid #e8edf3;
+}
+
+/* ========================================
+   EMPTY STATES
+======================================== */
+
+.registrar-empty-state {
+  min-height: 260px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  padding: 35px 18px;
+
+  text-align: center;
+}
+
+.registrar-empty-icon {
+  width: 67px;
+  height: 67px;
+
+  display: grid;
+  place-items: center;
+
+  margin-bottom: 17px;
+
+  border-radius: 18px;
+
+  background: #edf2f8;
+  color: #24466e;
+}
+
+.registrar-empty-state h4 {
+  margin: 0 0 10px;
+
+  color: var(--registrar-navy);
+  font-size: 16px;
+}
+
+.registrar-empty-state p {
+  max-width: 440px;
+
+  margin: 0;
+
+  color: var(--registrar-muted);
+
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.registrar-coming-soon {
+  display: inline-block;
+
+  margin-top: 20px;
+  padding: 7px 13px;
+
+  border: 1px solid #f0dfb5;
+  border-radius: 20px;
+
+  background: #fffaf0;
+  color: #a87918;
+
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+/* ========================================
+   INLINE NOTES
+======================================== */
+
+.registrar-inline-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+
+  margin-top: 20px;
+  padding: 15px;
+
+  border-radius: 9px;
+
+  background: #f5f8fc;
+  color: #65768d;
+}
+
+.registrar-inline-note svg {
+  flex-shrink: 0;
+}
+
+.registrar-inline-note p {
+  margin: 0;
+
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+/* ========================================
+   PROFILE
+======================================== */
+
+.registrar-profile-layout {
+  display: grid;
+
+  grid-template-columns:
+    300px minmax(0, 1fr);
+
+  gap: 22px;
+}
+
+.registrar-profile-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  text-align: center;
+}
+
+.registrar-profile-avatar {
+  width: 96px;
+  height: 96px;
+
+  display: grid;
+  place-items: center;
+
+  margin: 15px 0 19px;
+
+  border-radius: 50%;
+
+  background: #edf2f8;
+  color: var(--registrar-navy);
+}
+
+.registrar-profile-card h3 {
+  margin: 0 0 7px;
+
+  color: var(--registrar-navy);
+  font-size: 19px;
+}
+
+.registrar-profile-card > p {
+  margin: 0;
+
+  color: var(--registrar-muted);
+  font-size: 12px;
+}
+
+.registrar-profile-label {
+  margin-top: 25px;
+  padding: 12px;
+
+  border-radius: 9px;
+
+  background: #f5f8fc;
+  color: #65768d;
+
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+/* ========================================
+   FOOTER
+======================================== */
+
+.registrar-footer {
+  padding: 18px 30px;
+
+  border-top: 1px solid var(--registrar-border);
+
+  color: #8793a3;
+
+  font-size: 11px;
+  text-align: center;
+}
+
+/* ========================================
+   MOBILE OVERLAY
+======================================== */
+
+.registrar-sidebar-overlay {
+  display: none;
+}
+
+/* ========================================
+   LOGOUT MODAL
+======================================== */
+
+.registrar-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+
+  display: grid;
+  place-items: center;
+
+  padding: 20px;
+
+  background: rgba(
+    7,
+    19,
+    36,
+    0.65
+  );
+}
+
+.registrar-logout-modal {
+  width: 100%;
+  max-width: 420px;
+
+  padding: 34px;
+
+  border-radius: 15px;
+
+  background: #ffffff;
+
+  text-align: center;
+
+  box-shadow: 0 25px 80px rgba(
+    0,
+    0,
+    0,
+    0.2
+  );
+}
+
+.registrar-modal-icon {
+  width: 64px;
+  height: 64px;
+
+  display: grid;
+  place-items: center;
+
+  margin: 0 auto 18px;
+
+  border-radius: 50%;
+
+  background: #fff2e7;
+  color: #b46d2d;
+}
+
+.registrar-logout-modal h2 {
+  margin: 0 0 11px;
+
+  color: var(--registrar-navy);
+  font-size: 20px;
+}
+
+.registrar-logout-modal p {
+  margin: 0;
+
+  color: var(--registrar-muted);
+
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.registrar-modal-actions {
+  display: flex;
+  gap: 12px;
+
+  margin-top: 27px;
+}
+
+.registrar-modal-actions button {
+  flex: 1;
+
+  padding: 12px;
+
+  border-radius: 9px;
+
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+
+  cursor: pointer;
+}
+
+.registrar-modal-cancel {
+  border: 1px solid #dce4ee;
+
+  background: #ffffff;
+  color: var(--registrar-navy);
+}
+
+.registrar-modal-confirm {
+  border: 1px solid var(--registrar-navy);
+
+  background: var(--registrar-navy);
+  color: #ffffff;
+}
+
+.registrar-modal-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ========================================
+   RESPONSIVE - TABLET
+======================================== */
+
+@media (max-width: 1200px) {
+  .registrar-overview-grid {
+    grid-template-columns: repeat(
+      2,
+      minmax(0, 1fr)
+    );
+  }
+
+  .registrar-dashboard-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ========================================
+   RESPONSIVE - MOBILE
+======================================== */
+
+@media (max-width: 900px) {
+  .registrar-sidebar {
+    transform: translateX(-100%);
+
+    transition: transform 0.25s ease;
+  }
+
+  .registrar-sidebar-open {
+    transform: translateX(0);
+  }
+
+  .registrar-sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 25;
+
+    display: block;
+
+    border: none;
+
+    background: rgba(
+      7,
+      19,
+      36,
+      0.55
+    );
+  }
+
+  .registrar-sidebar-close {
+    display: grid;
+    place-items: center;
+
+    margin-left: auto;
+    padding: 5px;
+
+    border: none;
+
+    background: transparent;
+    color: #ffffff;
+
+    cursor: pointer;
+  }
+
+  .registrar-main {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .registrar-menu-button {
+    display: grid;
+    place-items: center;
+
+    width: 39px;
+    height: 39px;
+
+    border: 1px solid #e0e7f0;
+    border-radius: 9px;
+
+    background: #ffffff;
+    color: var(--registrar-navy);
+
+    cursor: pointer;
+  }
+
+  .registrar-content {
+    padding: 24px;
+  }
+
+  .registrar-topbar {
+    padding: 17px 24px;
+  }
+}
+
+/* ========================================
+   RESPONSIVE - SMALL SCREENS
+======================================== */
+
+@media (max-width: 600px) {
+  .registrar-content {
+    padding: 17px 14px 30px;
+  }
+
+  .registrar-topbar {
+    min-height: 74px;
+    padding: 15px;
+  }
+
+  .registrar-topbar h1 {
+    font-size: 18px;
+  }
+
+  .registrar-topbar p,
+  .registrar-topbar-account > div:last-child {
+    display: none;
+  }
+
+  .registrar-welcome {
+    padding: 26px 22px;
+  }
+
+  .registrar-welcome-emblem {
+    display: none;
+  }
+
+  .registrar-overview-grid {
+    grid-template-columns: 1fr;
+    gap: 13px;
+  }
+
+  .registrar-overview-card {
+    min-height: 135px;
+  }
+
+  .registrar-panel {
+    padding: 18px;
+  }
+
+  .registrar-profile-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .registrar-information-row {
+    align-items: flex-start;
+  }
+
+  .registrar-modal-actions {
+    flex-direction: column;
+  }
+
+  .registrar-search-field {
+    max-width: 100%;
+  }
+}

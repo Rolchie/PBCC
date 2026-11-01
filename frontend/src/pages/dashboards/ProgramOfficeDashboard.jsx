@@ -1,7 +1,6 @@
 
 import { useContext, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-
 import {
   LayoutDashboard,
   Users,
@@ -20,39 +19,21 @@ import {
   AlertTriangle,
   ListChecks,
   Layers,
+  ShieldCheck,
+  Info,
 } from 'lucide-react';
 
 import { AuthContext } from '../../context/auth-context';
 import StudentRecords from '../../components/StudentRecords';
-
 import './ProgramOfficeDashboard.css';
 
 const navigation = [
-  {
-    id: 'dashboard',
-    label: 'Dashboard',
-    icon: LayoutDashboard,
-  },
-  {
-    id: 'students',
-    label: 'Student Records',
-    icon: Users,
-  },
-  {
-    id: 'offerings',
-    label: 'Subject Offerings',
-    icon: BookOpen,
-  },
-  {
-    id: 'loads',
-    label: 'Subject Loads',
-    icon: ClipboardList,
-  },
-  {
-    id: 'preparation',
-    label: 'Enrollment Preparation',
-    icon: FileCheck2,
-  },
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'students', label: 'Student Records', icon: Users },
+  { id: 'offerings', label: 'Subject Offerings', icon: BookOpen },
+  { id: 'loads', label: 'Subject Loads', icon: ClipboardList },
+  { id: 'preparation', label: 'Enrollment Preparation', icon: FileCheck2 },
+  { id: 'profile', label: 'Profile', icon: UserRound },
 ];
 
 const statistics = [
@@ -83,15 +64,13 @@ const modules = [
     id: 'students',
     title: 'Student Records',
     icon: Users,
-    description:
-      'Review student information for enrollment preparation.',
+    description: 'Review student information for enrollment preparation.',
   },
   {
     id: 'offerings',
     title: 'Subject Offerings',
     icon: BookOpen,
-    description:
-      'View available subjects, sections, and academic periods.',
+    description: 'View available subjects, sections, and academic periods.',
   },
   {
     id: 'loads',
@@ -112,7 +91,6 @@ const modules = [
 const moduleDescriptions = {
   offerings:
     'Subject offerings will be retrieved from the subject_offerings, sections, and academic_periods tables.',
-
   preparation:
     'Prepared enrollment records will be reviewed here before they are forwarded for Registrar confirmation.',
 };
@@ -130,8 +108,25 @@ function ProgramOfficeDashboard() {
   const confirmLogoutRef = useRef(null);
   const logoutButtonRef = useRef(null);
 
+  const user = auth?.user;
+
+  const fullName = [
+    user?.first_name,
+    user?.middle_name,
+    user?.last_name,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .trim();
+
   const displayName =
-    auth?.user?.username || 'Program Office Personnel';
+    fullName ||
+    user?.full_name ||
+    user?.name ||
+    user?.username ||
+    'Program Office Personnel';
+
+  const displayEmail = user?.email || 'Not available';
 
   const currentSection =
     navigation.find((item) => item.id === activeSection) ||
@@ -151,7 +146,10 @@ function ProgramOfficeDashboard() {
     if (loggingOut) return;
 
     setShowLogoutModal(false);
-    logoutButtonRef.current?.focus();
+
+    requestAnimationFrame(() => {
+      logoutButtonRef.current?.focus();
+    });
   }
 
   async function confirmLogout() {
@@ -160,15 +158,22 @@ function ProgramOfficeDashboard() {
     setLoggingOut(true);
 
     try {
-      if (typeof auth?.logout === 'function') {
-        await auth.logout();
+      if (typeof auth?.logout !== 'function') {
+        throw new Error(
+          'Authentication logout function is unavailable.'
+        );
       }
+
+      await auth.logout();
+
+      setShowLogoutModal(false);
+      setSidebarOpen(false);
 
       navigate('/login', { replace: true });
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('Program Office logout error:', error);
       setLoggingOut(false);
-      setShowLogoutModal(false);
+      window.alert('Unable to log out. Please try again.');
     }
   }
 
@@ -183,7 +188,11 @@ function ProgramOfficeDashboard() {
     function handleKeyDown(event) {
       if (event.key === 'Escape' && !loggingOut) {
         setShowLogoutModal(false);
-        logoutButtonRef.current?.focus();
+
+        requestAnimationFrame(() => {
+          logoutButtonRef.current?.focus();
+        });
+
         return;
       }
 
@@ -194,7 +203,10 @@ function ProgramOfficeDashboard() {
 
       if (!first || !last) return;
 
-      if (event.shiftKey && document.activeElement === first) {
+      if (
+        event.shiftKey &&
+        document.activeElement === first
+      ) {
         event.preventDefault();
         last.focus();
       } else if (
@@ -275,8 +287,8 @@ function ProgramOfficeDashboard() {
             <h3>Enrollment Management Modules</h3>
 
             <p>
-              Access the main enrollment preparation functions
-              of the Program Office.
+              Access the main enrollment preparation
+              functions of the Program Office.
             </p>
           </div>
 
@@ -301,10 +313,7 @@ function ProgramOfficeDashboard() {
 
                   <span className="program-module-link">
                     Open module
-                    <ArrowRight
-                      size={15}
-                      strokeWidth={1.8}
-                    />
+                    <ArrowRight size={15} strokeWidth={1.8} />
                   </span>
                 </button>
               );
@@ -330,64 +339,19 @@ function ProgramOfficeDashboard() {
           requirements, and assigning appropriate sections.
         </p>
 
-        <div
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            justifyContent: 'center',
-            gap: '12px',
-            marginTop: '20px',
-            marginBottom: '12px',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '12px 16px',
-              border: '1px solid #e3e8f0',
-              borderRadius: '10px',
-              background: '#f8fafc',
-              fontSize: '12px',
-              fontWeight: 700,
-            }}
-          >
-            <BookOpen size={18} color="#b48727" />
+        <div className="program-load-steps">
+          <div className="program-load-step">
+            <BookOpen size={18} />
             Select Subjects
           </div>
 
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '12px 16px',
-              border: '1px solid #e3e8f0',
-              borderRadius: '10px',
-              background: '#f8fafc',
-              fontSize: '12px',
-              fontWeight: 700,
-            }}
-          >
-            <ListChecks size={18} color="#b48727" />
+          <div className="program-load-step">
+            <ListChecks size={18} />
             Check Prerequisites
           </div>
 
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '12px 16px',
-              border: '1px solid #e3e8f0',
-              borderRadius: '10px',
-              background: '#f8fafc',
-              fontSize: '12px',
-              fontWeight: 700,
-            }}
-          >
-            <Layers size={18} color="#b48727" />
+          <div className="program-load-step">
+            <Layers size={18} />
             Assign Sections
           </div>
         </div>
@@ -424,6 +388,67 @@ function ProgramOfficeDashboard() {
     );
   }
 
+  // Profile uses the same two-card structure as StudentDashboard.
+  function renderProfile() {
+    return (
+      <div className="program-profile-layout">
+        <section className="program-panel program-profile-card">
+          <div className="program-profile-avatar-large">
+            <UserRound size={40} />
+          </div>
+
+          <h3>{displayName}</h3>
+          <p>Program Office Personnel</p>
+
+          <span className="program-profile-label">
+            Pangantucan Bukidnon Community College
+          </span>
+        </section>
+
+        <section className="program-panel program-profile-info-card">
+          <div className="program-profile-panel-heading">
+            <div>
+              <h3>Personnel Information</h3>
+              <p>Account and personnel profile overview.</p>
+            </div>
+
+            <ShieldCheck size={22} />
+          </div>
+
+          <div className="program-information-list">
+            <InformationRow
+              label="Account Name"
+              value={displayName}
+            />
+
+            <InformationRow
+              label="Email Address"
+              value={displayEmail}
+            />
+
+            <InformationRow
+              label="Account Role"
+              value="Program Office Personnel"
+            />
+
+            <InformationRow
+              label="Institution"
+              value="Pangantucan Bukidnon Community College"
+            />
+          </div>
+
+          <div className="program-profile-note">
+            <Info size={17} />
+            <span>
+              Personnel profile details will be connected
+              to official records in a future update.
+            </span>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
   function renderContent() {
     if (activeSection === 'dashboard') {
       return renderDashboard();
@@ -435,6 +460,10 @@ function ProgramOfficeDashboard() {
 
     if (activeSection === 'loads') {
       return renderSubjectLoads();
+    }
+
+    if (activeSection === 'profile') {
+      return renderProfile();
     }
 
     return renderPendingModule();
@@ -467,7 +496,6 @@ function ProgramOfficeDashboard() {
             <strong>
               Pangantucan Bukidnon Community College
             </strong>
-
             <span>Program Office Portal</span>
           </div>
 
@@ -517,10 +545,7 @@ function ProgramOfficeDashboard() {
                 </span>
 
                 {activeSection === item.id && (
-                  <ChevronRight
-                    size={15}
-                    strokeWidth={1.8}
-                  />
+                  <ChevronRight size={15} strokeWidth={1.8} />
                 )}
               </button>
             );
@@ -537,7 +562,6 @@ function ProgramOfficeDashboard() {
               <strong title={displayName}>
                 {displayName}
               </strong>
-
               <span>Program Office Personnel</span>
             </div>
           </div>
@@ -549,7 +573,7 @@ function ProgramOfficeDashboard() {
             onClick={openLogoutModal}
           >
             <LogOut size={18} strokeWidth={1.8} />
-            <span>Log out</span>
+            <span>Log Out</span>
           </button>
         </div>
       </aside>
@@ -568,7 +592,6 @@ function ProgramOfficeDashboard() {
 
             <div className="program-topbar-heading">
               <h1>{currentSection.label}</h1>
-
               <p>
                 Pangantucan Bukidnon Community College
               </p>
@@ -584,7 +607,6 @@ function ProgramOfficeDashboard() {
               <strong title={displayName}>
                 {displayName}
               </strong>
-
               <span>Program Office Personnel</span>
             </div>
           </div>
@@ -625,7 +647,6 @@ function ProgramOfficeDashboard() {
 
             <div className="program-modal-notice">
               <AlertTriangle size={17} strokeWidth={1.8} />
-
               <span>
                 Your current session will be ended.
               </span>
@@ -650,7 +671,6 @@ function ProgramOfficeDashboard() {
                 disabled={loggingOut}
               >
                 <LogOut size={17} strokeWidth={1.8} />
-
                 {loggingOut
                   ? 'Logging out...'
                   : 'Yes, Log Out'}
@@ -659,6 +679,15 @@ function ProgramOfficeDashboard() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function InformationRow({ label, value }) {
+  return (
+    <div className="program-information-row">
+      <span>{label}</span>
+      <strong>{value}</strong>
     </div>
   );
 }

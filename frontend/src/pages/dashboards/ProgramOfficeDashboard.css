@@ -457,6 +457,30 @@
   line-height: 1.8;
 }
 
+.program-load-steps {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin: 20px 0 12px;
+}
+
+.program-load-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border: 1px solid #e3e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.program-load-step svg {
+  color: #b48727;
+}
+
 .program-development-tag {
   display: inline-flex;
   align-items: center;
@@ -585,6 +609,144 @@
   cursor: not-allowed;
 }
 
+/* PROFILE: Same two-card layout as Student Portal */
+
+.program-profile-layout {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  align-items: start;
+  gap: 22px;
+}
+
+.program-profile-layout > .program-panel {
+  min-width: 0;
+  padding: 25px;
+}
+
+.program-profile-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.program-profile-avatar-large {
+  display: grid;
+  place-items: center;
+  width: 94px;
+  height: 94px;
+  margin: 10px 0 19px;
+  border-radius: 50%;
+  background: #edf2f8;
+  color: #102a4c;
+}
+
+.program-profile-card h3 {
+  margin: 0 0 8px;
+  color: #102a4c;
+  font-size: 18px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.program-profile-card > p {
+  margin: 0;
+  color: #7b8ba2;
+  font-size: 12px;
+}
+
+.program-profile-label {
+  display: block;
+  width: 100%;
+  margin-top: 24px;
+  padding: 13px 12px;
+  border-radius: 9px;
+  background: #f5f8fc;
+  color: #6c7b90;
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.program-profile-panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 19px;
+  border-bottom: 1px solid #edf1f5;
+}
+
+.program-profile-panel-heading h3 {
+  margin: 0 0 7px;
+  color: #102a4c;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.program-profile-panel-heading p {
+  margin: 0;
+  color: #7b8ba2;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.program-profile-panel-heading > svg {
+  flex-shrink: 0;
+  color: #b48727;
+}
+
+.program-information-list {
+  display: flex;
+  flex-direction: column;
+  margin-top: 6px;
+}
+
+.program-information-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 17px 0;
+  border-bottom: 1px solid #edf1f5;
+}
+
+.program-information-row:last-child {
+  border-bottom: 0;
+}
+
+.program-information-row span {
+  color: #68788c;
+  font-size: 12px;
+}
+
+.program-information-row strong {
+  max-width: 65%;
+  color: #102a4c;
+  font-size: 12px;
+  font-weight: 750;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.program-profile-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 20px;
+  padding: 14px;
+  border-radius: 9px;
+  background: #f5f8fc;
+  color: #65768d;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.program-profile-note svg {
+  flex-shrink: 0;
+}
+
+/* RESPONSIVE */
+
 @media (max-width: 1150px) {
   .program-stats-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -592,6 +754,16 @@
 
   .program-modules-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .program-profile-layout {
+    grid-template-columns: 260px minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .program-profile-layout {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -673,6 +845,18 @@
 
   .program-modal-actions button {
     width: 100%;
+  }
+
+  .program-profile-layout > .program-panel {
+    padding: 20px;
+  }
+
+  .program-information-row {
+    align-items: flex-start;
+  }
+
+  .program-information-row strong {
+    max-width: 55%;
   }
 }
 
