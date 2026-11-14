@@ -1,4 +1,3 @@
-
 import { useContext, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -17,14 +16,15 @@ import {
   ChevronRight,
   Database,
   AlertTriangle,
-  ListChecks,
-  Layers,
   ShieldCheck,
-  Info,
+  Info
 } from 'lucide-react';
 
 import { AuthContext } from '../../context/auth-context';
 import StudentRecords from '../../components/StudentRecords';
+import SubjectOfferings from '../../components/SubjectOfferings';
+import SubjectLoads from '../../components/SubjectLoads';
+
 import './ProgramOfficeDashboard.css';
 
 const navigation = [
@@ -32,31 +32,35 @@ const navigation = [
   { id: 'students', label: 'Student Records', icon: Users },
   { id: 'offerings', label: 'Subject Offerings', icon: BookOpen },
   { id: 'loads', label: 'Subject Loads', icon: ClipboardList },
-  { id: 'preparation', label: 'Enrollment Preparation', icon: FileCheck2 },
-  { id: 'profile', label: 'Profile', icon: UserRound },
+  {
+    id: 'preparation',
+    label: 'Enrollment Preparation',
+    icon: FileCheck2
+  },
+  { id: 'profile', label: 'Profile', icon: UserRound }
 ];
 
 const statistics = [
   {
     title: 'Student Records',
     icon: Users,
-    description: 'Awaiting dashboard statistics integration',
+    description: 'Awaiting dashboard statistics integration'
   },
   {
     title: 'Subject Offerings',
     icon: BookOpen,
-    description: 'Awaiting database integration',
+    description: 'Browse approved curriculum subjects'
   },
   {
     title: 'Enrollment Records',
     icon: GraduationCap,
-    description: 'Awaiting database integration',
+    description: 'Awaiting database integration'
   },
   {
     title: 'Academic Period',
     icon: CalendarDays,
-    description: 'Awaiting database integration',
-  },
+    description: 'Awaiting database integration'
+  }
 ];
 
 const modules = [
@@ -64,35 +68,35 @@ const modules = [
     id: 'students',
     title: 'Student Records',
     icon: Users,
-    description: 'Review student information for enrollment preparation.',
+    description:
+      'Review student information for enrollment preparation.'
   },
   {
     id: 'offerings',
     title: 'Subject Offerings',
     icon: BookOpen,
-    description: 'View available subjects, sections, and academic periods.',
+    description:
+      'Browse approved subjects for your assigned program and curriculum.'
   },
   {
     id: 'loads',
     title: 'Subject Loads',
     icon: ClipboardList,
     description:
-      'Prepare subject loads, verify prerequisites, and assign sections.',
+      'Prepare class sections for academic periods.'
   },
   {
     id: 'preparation',
     title: 'Enrollment Preparation',
     icon: FileCheck2,
     description:
-      'Review prepared enrollment records before Registrar confirmation.',
-  },
+      'Review prepared enrollment records before Registrar confirmation.'
+  }
 ];
 
 const moduleDescriptions = {
-  offerings:
-    'Subject offerings will be retrieved from the subject_offerings, sections, and academic_periods tables.',
   preparation:
-    'Prepared enrollment records will be reviewed here before they are forwarded for Registrar confirmation.',
+    'Prepared enrollment records will be reviewed here before they are forwarded for Registrar confirmation.'
 };
 
 function ProgramOfficeDashboard() {
@@ -113,7 +117,7 @@ function ProgramOfficeDashboard() {
   const fullName = [
     user?.first_name,
     user?.middle_name,
-    user?.last_name,
+    user?.last_name
   ]
     .filter(Boolean)
     .join(' ')
@@ -324,46 +328,6 @@ function ProgramOfficeDashboard() {
     );
   }
 
-  function renderSubjectLoads() {
-    return (
-      <section className="program-panel program-empty-panel">
-        <div className="program-empty-icon">
-          <ClipboardList size={38} strokeWidth={1.6} />
-        </div>
-
-        <h3>Subject Loads</h3>
-
-        <p>
-          Prepare a student's subject load by selecting
-          available subject offerings, verifying prerequisite
-          requirements, and assigning appropriate sections.
-        </p>
-
-        <div className="program-load-steps">
-          <div className="program-load-step">
-            <BookOpen size={18} />
-            Select Subjects
-          </div>
-
-          <div className="program-load-step">
-            <ListChecks size={18} />
-            Check Prerequisites
-          </div>
-
-          <div className="program-load-step">
-            <Layers size={18} />
-            Assign Sections
-          </div>
-        </div>
-
-        <span className="program-development-tag">
-          <Database size={14} strokeWidth={1.8} />
-          Pending backend integration
-        </span>
-      </section>
-    );
-  }
-
   function renderPendingModule() {
     const Icon = currentSection.icon;
 
@@ -388,7 +352,6 @@ function ProgramOfficeDashboard() {
     );
   }
 
-  // Profile uses the same two-card structure as StudentDashboard.
   function renderProfile() {
     return (
       <div className="program-profile-layout">
@@ -458,8 +421,12 @@ function ProgramOfficeDashboard() {
       return <StudentRecords />;
     }
 
+    if (activeSection === 'offerings') {
+      return <SubjectOfferings />;
+    }
+
     if (activeSection === 'loads') {
-      return renderSubjectLoads();
+      return <SubjectLoads />;
     }
 
     if (activeSection === 'profile') {

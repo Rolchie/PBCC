@@ -1,4 +1,3 @@
-
 const express = require('express');
 const supabase = require('../config/supabase');
 const authenticateUser = require('../middleware/authMiddleware');
@@ -6,18 +5,10 @@ const requireRole = require('../middleware/roleMiddleware');
 
 const router = express.Router();
 
-// ========================================
-// PROGRAM OFFICE ACCESS CONTROL
-// ========================================
-
 router.use(
   authenticateUser,
   requireRole('Program Office Personnel')
 );
-
-// ========================================
-// CONSTANTS
-// ========================================
 
 const STUDENT_COLUMNS = `
   student_id,
@@ -38,472 +29,522 @@ const STUDENT_COLUMNS = `
   status
 `;
 
-const STUDENT_TYPES = [
-  'Incoming',
-  'Continuing',
-  'Returning',
-  'Transferee',
-  'Shiftee',
-];
-
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function cleanText(value) {
-  return typeof value === 'string' ? value.trim() : '';
+function parseId(value) {
+  const number = Number(value);
+  return Number.isSafeInteger(number) && number > 0
+    ? number
+    : null;
 }
 
-function optionalText(value) {
-  const cleaned = cleanText(value);
-  return cleaned || null;
+async function getAssignedProgramIds(userId) {
+  const { data, error } = await supabase
+    .from('user_program_assignments')
+    .select('program_id')
+    .eq('user_id', userId)
+    .eq('status', 'active');
+
+  if (error) throw error;
+
+  return [
+    ...new Set(
+      (data || [])
+        .map((row) => Number(row.program_id))
+        .filter((id) => Number.isSafeInteger(id) && id > 0)
+    )
+  ];
 }
 
-function parsePositiveInteger(value) {
-  if (
-    value === null ||
-    value === undefined ||
-    value === ''
-  ) {
-    return null;
+router.use(async (req, res, next) => {
+  try {
+    const programIds = await getAssignedProgramIds(req.user.user_id);
+
+    if (programIds.length === 0) {
+      return res.status(403).json({
+        message:
+          'Your account has no active program assignment. Contact the administrator.'
+      });
+    }
+
+    req.assignedProgramIds = programIds;
+    next();
+  } catch (error) {
+    console.error('Program assignment lookup error:', error);
+    return res.status(500).json({
+      message: 'Unable to verify your program access.'
+    });
   }
+});
 
-  const parsed = Number(value);
-
-  if (!Number.isSafeInteger(parsed) || parsed <= 0) {
-    return null;
-  }
-
-  return parsed;
-}
-
-function isValidDate(value) {
-  if (typeof value !== 'string') return false;
-
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    return false;
-  }
-
-  const date = new Date(`${value}T00:00:00Z`);
-
-  return (
-    !Number.isNaN(date.getTime()) &&
-    date.toISOString().slice(0, 10) === value
-  );
-}
-
-function isDuplicateError(error) {
-  return error?.code === '23505';
-}
-
-function isForeignKeyError(error) {
-  return error?.code === '23503';
-}
-
-// ========================================
 // STUDENT RECORDS
-// ========================================
-
-// GET all student records
 router.get('/students', async (req, res) => {
   try {
-    const { data: students, error } = await supabase
+    const { data, error } = await supabase
       .from('students')
       .select(STUDENT_COLUMNS)
+      .in('program_id', req.assignedProgramIds)
       .order('student_id', { ascending: false });
 
-    if (error) {
-      console.error('Fetch students error:', error);
+    if (error) throw error;
 
-      return res.status(500).json({
-        message: 'Failed to retrieve student records.',
-      });
-    }
-
-    return res.status(200).json({
+    return res.json({
       message: 'Student records retrieved successfully.',
-      students: students || [],
+      students: data || []
     });
   } catch (error) {
-    console.error('Student records error:', error);
-
+    console.error('Fetch program students error:', error);
     return res.status(500).json({
-      message: 'Failed to retrieve student records.',
+      message: 'Failed to retrieve student records.'
     });
   }
 });
 
-// ========================================
-// PROGRAM OPTIONS
-// ========================================
-
-// GET available programs for student forms
+// ASSIGNED PROGRAMS
 router.get('/programs', async (req, res) => {
   try {
-    const { data: programs, error } = await supabase
+    const { data, error } = await supabase
       .from('programs')
-      .select(`
-        program_id,
-        program_code,
-        program_name,
-        degree_level,
-        status
-      `)
+      .select(
+        'program_id, program_code, program_name, degree_level, status'
+      )
+      .in('program_id', req.assignedProgramIds)
       .eq('status', 'active')
-      .order('program_name', { ascending: true });
+      .order('program_name');
 
-    if (error) {
-      console.error('Fetch programs error:', error);
+    if (error) throw error;
 
-      return res.status(500).json({
-        message: 'Failed to retrieve programs.',
-      });
-    }
-
-    return res.status(200).json({
+    return res.json({
       message: 'Programs retrieved successfully.',
-      programs: programs || [],
+      programs: data || []
     });
   } catch (error) {
-    console.error('Programs error:', error);
-
+    console.error('Fetch assigned programs error:', error);
     return res.status(500).json({
-      message: 'Failed to retrieve programs.',
+      message: 'Failed to retrieve programs.'
     });
   }
 });
 
-// ========================================
-// CURRICULUM OPTIONS
-// ========================================
-
-// GET available curricula, optionally filtered by program
+// ASSIGNED CURRICULA
 router.get('/curricula', async (req, res) => {
   try {
-    const programId = req.query.program_id;
+    let programIds = req.assignedProgramIds;
 
-    let query = supabase
+    if (req.query.program_id !== undefined) {
+      const programId = parseId(req.query.program_id);
+
+      if (!programId) {
+        return res.status(400).json({
+          message: 'Invalid program ID.'
+        });
+      }
+
+      if (!programIds.includes(programId)) {
+        return res.status(403).json({
+          message: 'You are not assigned to this program.'
+        });
+      }
+
+      programIds = [programId];
+    }
+
+    const { data, error } = await supabase
       .from('curricula')
-      .select(`
-        curriculum_id,
-        program_id,
-        curriculum_year,
-        description,
-        status
-      `)
+      .select(
+        'curriculum_id, program_id, curriculum_year, description, status'
+      )
+      .in('program_id', programIds)
       .eq('status', 'active')
       .order('curriculum_year', { ascending: false });
 
-    if (
-      programId !== undefined &&
-      programId !== ''
-    ) {
-      const parsedProgramId = parsePositiveInteger(programId);
+    if (error) throw error;
 
-      if (!parsedProgramId) {
-        return res.status(400).json({
-          message: 'Invalid program ID.',
-        });
-      }
-
-      query = query.eq('program_id', parsedProgramId);
-    }
-
-    const { data: curricula, error } = await query;
-
-    if (error) {
-      console.error('Fetch curricula error:', error);
-
-      return res.status(500).json({
-        message: 'Failed to retrieve curricula.',
-      });
-    }
-
-    return res.status(200).json({
+    return res.json({
       message: 'Curricula retrieved successfully.',
-      curricula: curricula || [],
+      curricula: data || []
     });
   } catch (error) {
-    console.error('Curricula error:', error);
-
+    console.error('Fetch assigned curricula error:', error);
     return res.status(500).json({
-      message: 'Failed to retrieve curricula.',
+      message: 'Failed to retrieve curricula.'
     });
   }
 });
 
-// ========================================
-// ADD STUDENT
-// ========================================
-
-// POST create a new student record
-router.post('/students', async (req, res) => {
+// APPROVED CURRICULUM SUBJECTS
+router.get('/curriculum-subjects', async (req, res) => {
   try {
-    const {
-      student_no,
-      first_name,
-      middle_name,
-      last_name,
-      sex,
-      birthdate,
-      address,
-      contact_number,
-      email,
-      program_id,
-      curriculum_id,
-      year_level,
-      student_type,
-    } = req.body || {};
-
-    // ----------------------------------------
-    // Validate required student information
-    // ----------------------------------------
-
-    const studentNo = cleanText(student_no);
-    const firstName = cleanText(first_name);
-    const lastName = cleanText(last_name);
-
-    if (!studentNo || !firstName || !lastName) {
-      return res.status(400).json({
-        message:
-          'Student number, first name, and last name are required.',
-      });
-    }
-
-    if (
-      studentNo.length > 100 ||
-      firstName.length > 100 ||
-      lastName.length > 100
-    ) {
-      return res.status(400).json({
-        message: 'One or more fields exceed the allowed length.',
-      });
-    }
-
-    const middleName = optionalText(middle_name);
-    const studentEmail = optionalText(email)?.toLowerCase() || null;
-    const studentSex = optionalText(sex);
-    const studentBirthdate = optionalText(birthdate);
-    const studentAddress = optionalText(address);
-    const contactNumber = optionalText(contact_number);
-    const studentType = optionalText(student_type);
-
-    if (middleName && middleName.length > 100) {
-      return res.status(400).json({
-        message: 'Middle name is too long.',
-      });
-    }
-
-    if (
-      studentEmail &&
-      !EMAIL_PATTERN.test(studentEmail)
-    ) {
-      return res.status(400).json({
-        message: 'Please provide a valid email address.',
-      });
-    }
-
-    if (
-      studentBirthdate &&
-      !isValidDate(studentBirthdate)
-    ) {
-      return res.status(400).json({
-        message: 'Birthdate must be a valid date in YYYY-MM-DD format.',
-      });
-    }
-
-    if (
-      studentType &&
-      !STUDENT_TYPES.includes(studentType)
-    ) {
-      return res.status(400).json({
-        message: 'Please select a valid student type.',
-      });
-    }
-
-    // ----------------------------------------
-    // Validate academic information
-    // ----------------------------------------
-
-    const programId = parsePositiveInteger(program_id);
-    const curriculumId = parsePositiveInteger(curriculum_id);
-    const yearLevel = parsePositiveInteger(year_level);
-
-    if (!programId) {
-      return res.status(400).json({
-        message: 'Please select a program.',
-      });
-    }
+    const curriculumId = parseId(req.query.curriculum_id);
 
     if (!curriculumId) {
       return res.status(400).json({
-        message: 'Please select a curriculum.',
+        message: 'A valid curriculum ID is required.'
       });
     }
-
-    if (!yearLevel || yearLevel > 6) {
-      return res.status(400).json({
-        message: 'Please select a valid year level.',
-      });
-    }
-
-    // ----------------------------------------
-    // Check duplicate student number
-    // ----------------------------------------
 
     const {
-      data: existingStudent,
-      error: duplicateCheckError,
-    } = await supabase
-      .from('students')
-      .select('student_id')
-      .eq('student_no', studentNo)
-      .maybeSingle();
-
-    if (duplicateCheckError) {
-      console.error(
-        'Check student number error:',
-        duplicateCheckError
-      );
-
-      return res.status(500).json({
-        message: 'Unable to validate the student number.',
-      });
-    }
-
-    if (existingStudent) {
-      return res.status(409).json({
-        message: 'This student number is already registered.',
-      });
-    }
-
-    // ----------------------------------------
-    // Verify selected program
-    // ----------------------------------------
-
-    const {
-      data: selectedProgram,
-      error: programError,
-    } = await supabase
-      .from('programs')
-      .select('program_id, status')
-      .eq('program_id', programId)
-      .maybeSingle();
-
-    if (programError) {
-      console.error('Validate program error:', programError);
-
-      return res.status(500).json({
-        message: 'Unable to validate the selected program.',
-      });
-    }
-
-    if (
-      !selectedProgram ||
-      selectedProgram.status !== 'active'
-    ) {
-      return res.status(400).json({
-        message: 'Please select an active program.',
-      });
-    }
-
-    // ----------------------------------------
-    // Verify selected curriculum belongs
-    // to the selected program
-    // ----------------------------------------
-
-    const {
-      data: selectedCurriculum,
-      error: curriculumError,
+      data: curriculum,
+      error: curriculumError
     } = await supabase
       .from('curricula')
-      .select('curriculum_id, program_id, status')
+      .select(
+        'curriculum_id, program_id, curriculum_year, description, status'
+      )
       .eq('curriculum_id', curriculumId)
       .maybeSingle();
 
-    if (curriculumError) {
-      console.error(
-        'Validate curriculum error:',
-        curriculumError
-      );
+    if (curriculumError) throw curriculumError;
 
-      return res.status(500).json({
-        message: 'Unable to validate the selected curriculum.',
+    if (
+      !curriculum ||
+      String(curriculum.status).toLowerCase() !== 'active'
+    ) {
+      return res.status(404).json({
+        message: 'Active curriculum not found.'
       });
     }
 
     if (
-      !selectedCurriculum ||
-      selectedCurriculum.status !== 'active' ||
-      Number(selectedCurriculum.program_id) !== programId
+      !req.assignedProgramIds.includes(
+        Number(curriculum.program_id)
+      )
     ) {
-      return res.status(400).json({
-        message:
-          'Please select an active curriculum belonging to the chosen program.',
+      return res.status(403).json({
+        message: 'You are not authorized to view this curriculum.'
       });
     }
-
-    // ----------------------------------------
-    // Create student record
-    // ----------------------------------------
-
-    const newStudent = {
-      student_no: studentNo,
-      first_name: firstName,
-      middle_name: middleName,
-      last_name: lastName,
-      sex: studentSex,
-      birthdate: studentBirthdate,
-      address: studentAddress,
-      contact_number: contactNumber,
-      email: studentEmail,
-      program_id: programId,
-      curriculum_id: curriculumId,
-      year_level: yearLevel,
-      student_type: studentType,
-      status: 'active',
-    };
 
     const {
-      data: createdStudent,
-      error: insertError,
+      data: links,
+      error: linksError
     } = await supabase
-      .from('students')
-      .insert(newStudent)
-      .select(STUDENT_COLUMNS)
-      .single();
+      .from('curriculum_subjects')
+      .select(
+        'curriculum_id, subject_id, year_level, semester, is_required'
+      )
+      .eq('curriculum_id', curriculumId)
+      .order('year_level', { ascending: true });
 
-    if (insertError) {
-      console.error('Create student error:', insertError);
+    if (linksError) throw linksError;
 
-      if (isDuplicateError(insertError)) {
-        return res.status(409).json({
-          message:
-            'A student with this information already exists.',
-        });
-      }
+    const subjectIds = [
+      ...new Set(
+        (links || []).map((link) => Number(link.subject_id))
+      )
+    ];
 
-      if (isForeignKeyError(insertError)) {
-        return res.status(400).json({
-          message:
-            'The selected academic information is no longer valid.',
-        });
-      }
-
-      return res.status(500).json({
-        message: 'Failed to create the student record.',
+    if (subjectIds.length === 0) {
+      return res.json({
+        message: 'No subjects are linked to this curriculum.',
+        curriculum,
+        subjects: []
       });
     }
 
-    return res.status(201).json({
-      message: 'Student record created successfully.',
-      student: createdStudent,
+    const {
+      data: subjects,
+      error: subjectsError
+    } = await supabase
+      .from('subjects')
+      .select(
+        'subject_id, subject_code, subject_title, units, status'
+      )
+      .in('subject_id', subjectIds);
+
+    if (subjectsError) throw subjectsError;
+
+    const subjectMap = new Map(
+      (subjects || []).map((subject) => [
+        Number(subject.subject_id),
+        subject
+      ])
+    );
+
+    const records = (links || [])
+      .map((link) => {
+        const subject = subjectMap.get(Number(link.subject_id));
+
+        if (!subject) return null;
+
+        return {
+          ...link,
+          curriculum_subject_id:
+            `${link.curriculum_id}-${link.subject_id}-${link.year_level}-${link.semester}`,
+          subject_code: subject.subject_code,
+          subject_title: subject.subject_title,
+          units: subject.units,
+          subject_status: subject.status
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => {
+        const yearDifference =
+          Number(a.year_level) - Number(b.year_level);
+
+        if (yearDifference !== 0) return yearDifference;
+
+        const termOrder = {
+          'first semester': 1,
+          'second semester': 2,
+          summer: 3
+        };
+
+        const termA =
+          termOrder[String(a.semester).trim().toLowerCase()] || 99;
+
+        const termB =
+          termOrder[String(b.semester).trim().toLowerCase()] || 99;
+
+        if (termA !== termB) return termA - termB;
+
+        return String(a.subject_code).localeCompare(
+          String(b.subject_code)
+        );
+      });
+
+    return res.json({
+      message:
+        'Approved curriculum subjects retrieved successfully.',
+      curriculum,
+      subjects: records
     });
   } catch (error) {
-    console.error('Add student error:', error);
-
+    console.error('Fetch curriculum subjects error:', error);
     return res.status(500).json({
-      message: 'Failed to create the student record.',
+      message: 'Failed to retrieve curriculum subjects.'
     });
   }
 });
+
+// ACADEMIC PERIODS
+router.get('/academic-periods', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('academic_periods')
+      .select(
+        'period_id, school_year, semester, start_date, end_date, status'
+      )
+      .order('school_year', { ascending: false });
+
+    if (error) throw error;
+
+    const order = {
+      'First Semester': 1,
+      'Second Semester': 2,
+      Summer: 3
+    };
+
+    const periods = (data || []).sort((a, b) => {
+      const yearCompare =
+        String(b.school_year).localeCompare(String(a.school_year));
+
+      return yearCompare ||
+        (order[a.semester] || 99) - (order[b.semester] || 99);
+    });
+
+    return res.json({ periods });
+  } catch (error) {
+    console.error('Fetch academic periods error:', error);
+    return res.status(500).json({
+      message: 'Failed to retrieve academic periods.'
+    });
+  }
+});
+
+// VIEW SECTIONS FOR ASSIGNED PROGRAMS
+router.get('/sections', async (req, res) => {
+  try {
+    let query = supabase
+      .from('sections')
+      .select(
+        'section_id, section_code, program_id, year_level, period_id, capacity, status'
+      )
+      .in('program_id', req.assignedProgramIds);
+
+    if (req.query.period_id !== undefined) {
+      const periodId = parseId(req.query.period_id);
+
+      if (!periodId) {
+        return res.status(400).json({
+          message: 'Invalid academic period ID.'
+        });
+      }
+
+      query = query.eq('period_id', periodId);
+    }
+
+    const { data, error } = await query.order(
+      'year_level',
+      { ascending: true }
+    );
+
+    if (error) throw error;
+
+    const sections = (data || []).sort((a, b) =>
+      Number(a.year_level) - Number(b.year_level) ||
+      String(a.section_code).localeCompare(
+        String(b.section_code),
+        undefined,
+        { numeric: true }
+      )
+    );
+
+    return res.json({ sections });
+  } catch (error) {
+    console.error('Fetch sections error:', error);
+    return res.status(500).json({
+      message: 'Failed to retrieve sections.'
+    });
+  }
+});
+
+// CREATE SECTION
+router.post('/sections', async (req, res) => {
+  try {
+    const programId = parseId(req.body?.program_id);
+    const periodId = parseId(req.body?.period_id);
+    const yearLevel = parseId(req.body?.year_level);
+    const capacity = parseId(req.body?.capacity);
+
+    const letter = String(
+      req.body?.section_letter || ''
+    ).trim().toUpperCase();
+
+    if (
+      !programId ||
+      !req.assignedProgramIds.includes(programId)
+    ) {
+      return res.status(403).json({
+        message: 'You are not assigned to this program.'
+      });
+    }
+
+    if (
+      !periodId ||
+      !yearLevel ||
+      yearLevel > 4 ||
+      !capacity ||
+      capacity > 500 ||
+      !/^[A-Z]$/.test(letter)
+    ) {
+      return res.status(400).json({
+        message:
+          'Provide a valid academic period, year level (1–4), section letter (A–Z), and capacity (1–500).'
+      });
+    }
+
+    const {
+      data: program,
+      error: programError
+    } = await supabase
+      .from('programs')
+      .select('program_id, program_code, status')
+      .eq('program_id', programId)
+      .maybeSingle();
+
+    if (programError) throw programError;
+
+    if (
+      !program ||
+      String(program.status).toLowerCase() !== 'active'
+    ) {
+      return res.status(400).json({
+        message: 'The selected program is not active.'
+      });
+    }
+
+    const {
+      data: period,
+      error: periodError
+    } = await supabase
+      .from('academic_periods')
+      .select('period_id, status')
+      .eq('period_id', periodId)
+      .maybeSingle();
+
+    if (periodError) throw periodError;
+
+    if (
+      !period ||
+      String(period.status).toLowerCase() !== 'active'
+    ) {
+      return res.status(400).json({
+        message: 'Choose an active academic period.'
+      });
+    }
+
+    const programCode = String(
+      program.program_code || ''
+    ).trim().toUpperCase();
+
+    if (!/^[A-Z0-9-]+$/.test(programCode)) {
+      return res.status(400).json({
+        message: 'The program has no valid code.'
+      });
+    }
+
+    const sectionCode = `${programCode} ${yearLevel}-${letter}`;
+
+    const {
+      data: existing,
+      error: existingError
+    } = await supabase
+      .from('sections')
+      .select('section_id')
+      .eq('program_id', programId)
+      .eq('period_id', periodId)
+      .eq('section_code', sectionCode)
+      .limit(1);
+
+    if (existingError) throw existingError;
+
+    if (existing?.length) {
+      return res.status(409).json({
+        message:
+          `${sectionCode} already exists for this academic period.`
+      });
+    }
+
+    const {
+      data: section,
+      error: insertError
+    } = await supabase
+      .from('sections')
+      .insert({
+        section_code: sectionCode,
+        program_id: programId,
+        year_level: yearLevel,
+        period_id: periodId,
+        capacity,
+        status: 'active'
+      })
+      .select(
+        'section_id, section_code, program_id, year_level, period_id, capacity, status'
+      )
+      .single();
+
+    if (insertError) {
+      if (insertError.code === '23505') {
+        return res.status(409).json({
+          message: 'This section already exists.'
+        });
+      }
+
+      throw insertError;
+    }
+
+    return res.status(201).json({
+      message: `${sectionCode} created successfully.`,
+      section
+    });
+  } catch (error) {
+    console.error('Create section error:', error);
+    return res.status(500).json({
+      message: 'Failed to create section.'
+    });
+  }
+});
+
+// Registrar controls official student records.
+// Program Office Personnel cannot create students here.
 
 module.exports = router;
