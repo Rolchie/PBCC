@@ -1,3 +1,4 @@
+
 const express = require('express');
 const supabase = require('../config/supabase');
 const authenticateUser = require('../middleware/authMiddleware');
@@ -30,10 +31,26 @@ const STUDENT_COLUMNS = `
 `;
 
 function parseId(value) {
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
+
   const number = Number(value);
+
   return Number.isSafeInteger(number) && number > 0
     ? number
     : null;
+}
+
+function normalizeTerm(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ');
+}
+
+function sameTerm(a, b) {
+  return normalizeTerm(a) === normalizeTerm(b);
 }
 
 async function getAssignedProgramIds(userId) {
@@ -56,9 +73,11 @@ async function getAssignedProgramIds(userId) {
 
 router.use(async (req, res, next) => {
   try {
-    const programIds = await getAssignedProgramIds(req.user.user_id);
+    const programIds = await getAssignedProgramIds(
+      req.user.user_id
+    );
 
-    if (programIds.length === 0) {
+    if (!programIds.length) {
       return res.status(403).json({
         message:
           'Your account has no active program assignment. Contact the administrator.'
@@ -69,11 +88,34 @@ router.use(async (req, res, next) => {
     next();
   } catch (error) {
     console.error('Program assignment lookup error:', error);
+
     return res.status(500).json({
       message: 'Unable to verify your program access.'
     });
   }
 });
+
+async function findAuthorizedSection(sectionId, programIds) {
+  const { data, error } = await supabase
+    .from('sections')
+    .select(
+      'section_id, section_code, program_id, year_level, period_id, capacity, status'
+    )
+    .eq('section_id', sectionId)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  if (!data) {
+    return { section: null, reason: 'not_found' };
+  }
+
+  if (!programIds.includes(Number(data.program_id))) {
+    return { section: null, reason: 'forbidden' };
+  }
+
+  return { section: data, reason: null };
+}
 
 // STUDENT RECORDS
 router.get('/students', async (req, res) => {
@@ -92,6 +134,7 @@ router.get('/students', async (req, res) => {
     });
   } catch (error) {
     console.error('Fetch program students error:', error);
+
     return res.status(500).json({
       message: 'Failed to retrieve student records.'
     });
@@ -118,6 +161,7 @@ router.get('/programs', async (req, res) => {
     });
   } catch (error) {
     console.error('Fetch assigned programs error:', error);
+
     return res.status(500).json({
       message: 'Failed to retrieve programs.'
     });
@@ -164,6 +208,7 @@ router.get('/curricula', async (req, res) => {
     });
   } catch (error) {
     console.error('Fetch assigned curricula error:', error);
+
     return res.status(500).json({
       message: 'Failed to retrieve curricula.'
     });
@@ -213,10 +258,7 @@ router.get('/curriculum-subjects', async (req, res) => {
       });
     }
 
-    const {
-      data: links,
-      error: linksError
-    } = await supabase
+    const { data: links, error: linksError } = await supabase
       .from('curriculum_subjects')
       .select(
         'curriculum_id, subject_id, year_level, semester, is_required'
@@ -232,7 +274,7 @@ router.get('/curriculum-subjects', async (req, res) => {
       )
     ];
 
-    if (subjectIds.length === 0) {
+    if (!subjectIds.length) {
       return res.json({
         message: 'No subjects are linked to this curriculum.',
         curriculum,
@@ -240,15 +282,13 @@ router.get('/curriculum-subjects', async (req, res) => {
       });
     }
 
-    const {
-      data: subjects,
-      error: subjectsError
-    } = await supabase
-      .from('subjects')
-      .select(
-        'subject_id, subject_code, subject_title, units, status'
-      )
-      .in('subject_id', subjectIds);
+    const { data: subjects, error: subjectsError } =
+      await supabase
+        .from('subjects')
+        .select(
+          'subject_id, subject_code, subject_title, units, status'
+        )
+        .in('subject_id', subjectIds);
 
     if (subjectsError) throw subjectsError;
 
@@ -261,7 +301,9 @@ router.get('/curriculum-subjects', async (req, res) => {
 
     const records = (links || [])
       .map((link) => {
-        const subject = subjectMap.get(Number(link.subject_id));
+        const subject = subjectMap.get(
+          Number(link.subject_id)
+        );
 
         if (!subject) return null;
 
@@ -282,19 +324,17 @@ router.get('/curriculum-subjects', async (req, res) => {
 
         if (yearDifference !== 0) return yearDifference;
 
-        const termOrder = {
+        const order = {
           'first semester': 1,
           'second semester': 2,
           summer: 3
         };
 
-        const termA =
-          termOrder[String(a.semester).trim().toLowerCase()] || 99;
+        const termDifference =
+          (order[normalizeTerm(a.semester)] || 99) -
+          (order[normalizeTerm(b.semester)] || 99);
 
-        const termB =
-          termOrder[String(b.semester).trim().toLowerCase()] || 99;
-
-        if (termA !== termB) return termA - termB;
+        if (termDifference !== 0) return termDifference;
 
         return String(a.subject_code).localeCompare(
           String(b.subject_code)
@@ -309,6 +349,7 @@ router.get('/curriculum-subjects', async (req, res) => {
     });
   } catch (error) {
     console.error('Fetch curriculum subjects error:', error);
+
     return res.status(500).json({
       message: 'Failed to retrieve curriculum subjects.'
     });
@@ -328,29 +369,35 @@ router.get('/academic-periods', async (req, res) => {
     if (error) throw error;
 
     const order = {
-      'First Semester': 1,
-      'Second Semester': 2,
-      Summer: 3
+      'first semester': 1,
+      'second semester': 2,
+      summer: 3
     };
 
     const periods = (data || []).sort((a, b) => {
       const yearCompare =
-        String(b.school_year).localeCompare(String(a.school_year));
+        String(b.school_year).localeCompare(
+          String(a.school_year)
+        );
 
-      return yearCompare ||
-        (order[a.semester] || 99) - (order[b.semester] || 99);
+      return (
+        yearCompare ||
+        (order[normalizeTerm(a.semester)] || 99) -
+          (order[normalizeTerm(b.semester)] || 99)
+      );
     });
 
     return res.json({ periods });
   } catch (error) {
     console.error('Fetch academic periods error:', error);
+
     return res.status(500).json({
       message: 'Failed to retrieve academic periods.'
     });
   }
 });
 
-// VIEW SECTIONS FOR ASSIGNED PROGRAMS
+// VIEW SECTIONS
 router.get('/sections', async (req, res) => {
   try {
     let query = supabase
@@ -379,18 +426,20 @@ router.get('/sections', async (req, res) => {
 
     if (error) throw error;
 
-    const sections = (data || []).sort((a, b) =>
-      Number(a.year_level) - Number(b.year_level) ||
-      String(a.section_code).localeCompare(
-        String(b.section_code),
-        undefined,
-        { numeric: true }
-      )
+    const sections = (data || []).sort(
+      (a, b) =>
+        Number(a.year_level) - Number(b.year_level) ||
+        String(a.section_code).localeCompare(
+          String(b.section_code),
+          undefined,
+          { numeric: true }
+        )
     );
 
     return res.json({ sections });
   } catch (error) {
     console.error('Fetch sections error:', error);
+
     return res.status(500).json({
       message: 'Failed to retrieve sections.'
     });
@@ -432,14 +481,12 @@ router.post('/sections', async (req, res) => {
       });
     }
 
-    const {
-      data: program,
-      error: programError
-    } = await supabase
-      .from('programs')
-      .select('program_id, program_code, status')
-      .eq('program_id', programId)
-      .maybeSingle();
+    const { data: program, error: programError } =
+      await supabase
+        .from('programs')
+        .select('program_id, program_code, status')
+        .eq('program_id', programId)
+        .maybeSingle();
 
     if (programError) throw programError;
 
@@ -452,14 +499,12 @@ router.post('/sections', async (req, res) => {
       });
     }
 
-    const {
-      data: period,
-      error: periodError
-    } = await supabase
-      .from('academic_periods')
-      .select('period_id, status')
-      .eq('period_id', periodId)
-      .maybeSingle();
+    const { data: period, error: periodError } =
+      await supabase
+        .from('academic_periods')
+        .select('period_id, status')
+        .eq('period_id', periodId)
+        .maybeSingle();
 
     if (periodError) throw periodError;
 
@@ -482,18 +527,17 @@ router.post('/sections', async (req, res) => {
       });
     }
 
-    const sectionCode = `${programCode} ${yearLevel}-${letter}`;
+    const sectionCode =
+      `${programCode} ${yearLevel}-${letter}`;
 
-    const {
-      data: existing,
-      error: existingError
-    } = await supabase
-      .from('sections')
-      .select('section_id')
-      .eq('program_id', programId)
-      .eq('period_id', periodId)
-      .eq('section_code', sectionCode)
-      .limit(1);
+    const { data: existing, error: existingError } =
+      await supabase
+        .from('sections')
+        .select('section_id')
+        .eq('program_id', programId)
+        .eq('period_id', periodId)
+        .eq('section_code', sectionCode)
+        .limit(1);
 
     if (existingError) throw existingError;
 
@@ -504,23 +548,21 @@ router.post('/sections', async (req, res) => {
       });
     }
 
-    const {
-      data: section,
-      error: insertError
-    } = await supabase
-      .from('sections')
-      .insert({
-        section_code: sectionCode,
-        program_id: programId,
-        year_level: yearLevel,
-        period_id: periodId,
-        capacity,
-        status: 'active'
-      })
-      .select(
-        'section_id, section_code, program_id, year_level, period_id, capacity, status'
-      )
-      .single();
+    const { data: section, error: insertError } =
+      await supabase
+        .from('sections')
+        .insert({
+          section_code: sectionCode,
+          program_id: programId,
+          year_level: yearLevel,
+          period_id: periodId,
+          capacity,
+          status: 'active'
+        })
+        .select(
+          'section_id, section_code, program_id, year_level, period_id, capacity, status'
+        )
+        .single();
 
     if (insertError) {
       if (insertError.code === '23505') {
@@ -538,8 +580,315 @@ router.post('/sections', async (req, res) => {
     });
   } catch (error) {
     console.error('Create section error:', error);
+
     return res.status(500).json({
       message: 'Failed to create section.'
+    });
+  }
+});
+
+// VIEW SUBJECT LOADS FOR A SECTION
+router.get('/subject-loads', async (req, res) => {
+  try {
+    const sectionId = parseId(req.query.section_id);
+
+    if (!sectionId) {
+      return res.status(400).json({
+        message: 'A valid section ID is required.'
+      });
+    }
+
+    const { section, reason } =
+      await findAuthorizedSection(
+        sectionId,
+        req.assignedProgramIds
+      );
+
+    if (!section) {
+      return res.status(
+        reason === 'forbidden' ? 403 : 404
+      ).json({
+        message:
+          reason === 'forbidden'
+            ? 'You are not authorized to access this section.'
+            : 'Section not found.'
+      });
+    }
+
+    const { data: offerings, error: offeringError } =
+      await supabase
+        .from('subject_offerings')
+        .select(
+          'offering_id, subject_id, section_id, period_id, faculty_id, schedule, room, max_slots, status'
+        )
+        .eq('section_id', sectionId)
+        .eq('period_id', section.period_id)
+        .order('offering_id', { ascending: true });
+
+    if (offeringError) throw offeringError;
+
+    const subjectIds = [
+      ...new Set(
+        (offerings || []).map((row) =>
+          Number(row.subject_id)
+        )
+      )
+    ];
+
+    let subjects = [];
+
+    if (subjectIds.length) {
+      const result = await supabase
+        .from('subjects')
+        .select(
+          'subject_id, subject_code, subject_title, units'
+        )
+        .in('subject_id', subjectIds);
+
+      if (result.error) throw result.error;
+      subjects = result.data || [];
+    }
+
+    const subjectMap = new Map(
+      subjects.map((subject) => [
+        Number(subject.subject_id),
+        subject
+      ])
+    );
+
+    const records = (offerings || []).map((offering) => ({
+      ...offering,
+      subject:
+        subjectMap.get(Number(offering.subject_id)) ||
+        null
+    }));
+
+    return res.json({
+      message: 'Subject loads retrieved successfully.',
+      section,
+      offerings: records
+    });
+  } catch (error) {
+    console.error('Fetch subject loads error:', error);
+
+    return res.status(500).json({
+      message: 'Failed to retrieve subject loads.'
+    });
+  }
+});
+
+// ASSIGN APPROVED SUBJECTS TO A SECTION
+router.post('/subject-loads', async (req, res) => {
+  try {
+    const sectionId = parseId(req.body?.section_id);
+    const rawIds = req.body?.subject_ids;
+
+    if (
+      !sectionId ||
+      !Array.isArray(rawIds) ||
+      !rawIds.length ||
+      rawIds.length > 100
+    ) {
+      return res.status(400).json({
+        message:
+          'Select a valid section and at least one subject.'
+      });
+    }
+
+    const subjectIds = rawIds.map(parseId);
+
+    if (
+      subjectIds.some((id) => !id) ||
+      new Set(subjectIds).size !== subjectIds.length
+    ) {
+      return res.status(400).json({
+        message:
+          'Subject IDs must be valid and cannot contain duplicates.'
+      });
+    }
+
+    const { section, reason } =
+      await findAuthorizedSection(
+        sectionId,
+        req.assignedProgramIds
+      );
+
+    if (!section) {
+      return res.status(
+        reason === 'forbidden' ? 403 : 404
+      ).json({
+        message:
+          reason === 'forbidden'
+            ? 'You are not authorized to modify this section.'
+            : 'Section not found.'
+      });
+    }
+
+    if (normalizeTerm(section.status) !== 'active') {
+      return res.status(400).json({
+        message: 'Only active sections can receive subjects.'
+      });
+    }
+
+    const { data: period, error: periodError } =
+      await supabase
+        .from('academic_periods')
+        .select('period_id, semester, status')
+        .eq('period_id', section.period_id)
+        .maybeSingle();
+
+    if (periodError) throw periodError;
+
+    if (
+      !period ||
+      normalizeTerm(period.status) !== 'active'
+    ) {
+      return res.status(400).json({
+        message: 'The academic period is not active.'
+      });
+    }
+
+    const { data: curricula, error: curriculaError } =
+      await supabase
+        .from('curricula')
+        .select('curriculum_id')
+        .eq('program_id', section.program_id)
+        .eq('status', 'active');
+
+    if (curriculaError) throw curriculaError;
+
+    const curriculumIds = (curricula || []).map(
+      (item) => item.curriculum_id
+    );
+
+    if (!curriculumIds.length) {
+      return res.status(400).json({
+        message:
+          'No active curriculum exists for this program.'
+      });
+    }
+
+    const { data: links, error: linksError } =
+      await supabase
+        .from('curriculum_subjects')
+        .select(
+          'subject_id, year_level, semester'
+        )
+        .in('curriculum_id', curriculumIds)
+        .in('subject_id', subjectIds)
+        .eq('year_level', section.year_level);
+
+    if (linksError) throw linksError;
+
+    const allowedIds = new Set(
+      (links || [])
+        .filter((link) =>
+          sameTerm(link.semester, period.semester)
+        )
+        .map((link) => Number(link.subject_id))
+    );
+
+    const invalidIds = subjectIds.filter(
+      (id) => !allowedIds.has(id)
+    );
+
+    if (invalidIds.length) {
+      return res.status(400).json({
+        message:
+          'Some selected subjects are not approved for this program, year level, and semester.'
+      });
+    }
+
+    const { data: subjectRecords, error: subjectError } =
+      await supabase
+        .from('subjects')
+        .select('subject_id, status')
+        .in('subject_id', subjectIds);
+
+    if (subjectError) throw subjectError;
+
+    const activeSubjectIds = new Set(
+      (subjectRecords || [])
+        .filter(
+          (subject) =>
+            normalizeTerm(subject.status) === 'active'
+        )
+        .map((subject) => Number(subject.subject_id))
+    );
+
+    if (
+      subjectIds.some(
+        (id) => !activeSubjectIds.has(id)
+      )
+    ) {
+      return res.status(400).json({
+        message:
+          'One or more selected subjects are inactive or unavailable.'
+      });
+    }
+
+    const { data: existing, error: existingError } =
+      await supabase
+        .from('subject_offerings')
+        .select('subject_id')
+        .eq('section_id', sectionId)
+        .eq('period_id', section.period_id)
+        .in('subject_id', subjectIds);
+
+    if (existingError) throw existingError;
+
+    if (existing?.length) {
+      return res.status(409).json({
+        message:
+          'One or more selected subjects are already assigned to this section. Refresh and try again.'
+      });
+    }
+
+    const slots = Number(section.capacity);
+
+    const records = subjectIds.map((subjectId) => ({
+      subject_id: subjectId,
+      section_id: sectionId,
+      period_id: section.period_id,
+      faculty_id: null,
+      schedule: null,
+      room: null,
+      max_slots:
+        Number.isSafeInteger(slots) && slots > 0
+          ? slots
+          : null,
+      status: 'active'
+    }));
+
+    const { data: inserted, error: insertError } =
+      await supabase
+        .from('subject_offerings')
+        .insert(records)
+        .select(
+          'offering_id, subject_id, section_id, period_id, faculty_id, schedule, room, max_slots, status'
+        );
+
+    if (insertError) {
+      if (insertError.code === '23505') {
+        return res.status(409).json({
+          message:
+            'One or more subjects are already assigned. Refresh and try again.'
+        });
+      }
+
+      throw insertError;
+    }
+
+    return res.status(201).json({
+      message:
+        `${inserted?.length || records.length} subject(s) assigned successfully to ${section.section_code}.`,
+      offerings: inserted || []
+    });
+  } catch (error) {
+    console.error('Assign subject loads error:', error);
+
+    return res.status(500).json({
+      message: 'Failed to assign subjects to section.'
     });
   }
 });
@@ -548,3 +897,4 @@ router.post('/sections', async (req, res) => {
 // Program Office Personnel cannot create students here.
 
 module.exports = router;
+router.use(require('./studentLoadRoutes'));

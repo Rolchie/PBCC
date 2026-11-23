@@ -46,6 +46,34 @@ function isActiveUser(user) {
   );
 }
 
+function validateApplicationUser(applicationUser) {
+  if (!applicationUser) {
+    return {
+      status: 403,
+      message:
+        'Your account is not linked to a PBCC user record. Please contact the administrator.'
+    };
+  }
+
+  if (!VALID_ROLES.includes(applicationUser.role)) {
+    return {
+      status: 403,
+      message:
+        'Your account does not have a recognized PBCC role.'
+    };
+  }
+
+  if (!isActiveUser(applicationUser)) {
+    return {
+      status: 403,
+      message:
+        'Your account is not active. Please contact the administrator.'
+    };
+  }
+
+  return null;
+}
+
 // GET /api/auth/test
 router.get('/test', (req, res) => {
   return res.json({
@@ -88,30 +116,24 @@ router.post('/login', async (req, res) => {
       error: userError
     } = await getApplicationUser(data.user.id);
 
-    if (userError || !applicationUser) {
+    if (userError) {
       console.error(
         'PBCC user lookup failed during login:',
         userError
       );
 
-      return res.status(403).json({
-        message:
-          'Your account is not linked to a PBCC user record. Please contact the administrator.'
+      return res.status(500).json({
+        message: 'Unable to verify your PBCC account.'
       });
     }
 
-    if (!VALID_ROLES.includes(applicationUser.role)) {
-      return res.status(403).json({
-        message:
-          'Your account does not have a recognized PBCC role.'
-      });
-    }
+    const validationError =
+      validateApplicationUser(applicationUser);
 
-    if (!isActiveUser(applicationUser)) {
-      return res.status(403).json({
-        message:
-          'Your account is not active. Please contact the administrator.'
-      });
+    if (validationError) {
+      return res
+        .status(validationError.status)
+        .json({ message: validationError.message });
     }
 
     return res.status(200).json({
@@ -124,6 +146,76 @@ router.post('/login', async (req, res) => {
 
     return res.status(500).json({
       message: 'Login failed. Please try again.'
+    });
+  }
+});
+
+// POST /api/auth/refresh
+// Uses a refresh token to obtain a new Supabase session.
+// This route does not require an existing valid access token.
+router.post('/refresh', async (req, res) => {
+  try {
+    const { refresh_token } = req.body || {};
+
+    if (
+      typeof refresh_token !== 'string' ||
+      !refresh_token.trim()
+    ) {
+      return res.status(400).json({
+        message: 'A refresh token is required.'
+      });
+    }
+
+    const refreshClient = createLoginClient();
+
+    const { data, error } =
+      await refreshClient.auth.refreshSession({
+        refresh_token: refresh_token.trim()
+      });
+
+    if (error || !data?.user || !data?.session) {
+      return res.status(401).json({
+        message:
+          'Your session has expired. Please log in again.'
+      });
+    }
+
+    const {
+      data: applicationUser,
+      error: userError
+    } = await getApplicationUser(data.user.id);
+
+    if (userError) {
+      console.error(
+        'PBCC user lookup failed during refresh:',
+        userError
+      );
+
+      return res.status(500).json({
+        message: 'Unable to verify your PBCC account.'
+      });
+    }
+
+    const validationError =
+      validateApplicationUser(applicationUser);
+
+    if (validationError) {
+      return res
+        .status(validationError.status)
+        .json({ message: validationError.message });
+    }
+
+    return res.status(200).json({
+      message: 'Session refreshed successfully.',
+      user: applicationUser,
+      session: data.session
+    });
+  } catch (error) {
+    console.error('Session refresh error:', error);
+
+    return res.status(500).json({
+      message:
+        'Unable to refresh your session. Please try again.'
     });
   }
 });
@@ -219,7 +311,6 @@ router.post(
         });
       }
 
-      // Verify the current password with Supabase Auth.
       const verificationClient = createLoginClient();
 
       const { data, error: verifyError } =
@@ -238,7 +329,6 @@ router.post(
         });
       }
 
-      // Change the actual password in Supabase Auth.
       const { error: passwordError } =
         await supabase.auth.admin.updateUserById(
           req.user.id,
@@ -259,8 +349,6 @@ router.post(
         });
       }
 
-      // Clear the first-login requirement only after
-      // Supabase has accepted the new password.
       const { error: updateError } = await supabase
         .from('users')
         .update({

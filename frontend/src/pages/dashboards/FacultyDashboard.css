@@ -1,8 +1,9 @@
 
-/* ========================================
+/* =========================================================
    PBCC FACULTY PORTAL
-   NAVY BLUE AND GOLD THEME
-======================================== */
+   NAVY BLUE + GOLD
+   Complete responsive stylesheet
+   ========================================================= */
 
 .faculty-layout {
   --faculty-navy: #102a4c;
@@ -10,37 +11,60 @@
   --faculty-gold: #d6a849;
   --faculty-border: #e1e7ef;
   --faculty-muted: #718096;
+  --faculty-surface: #ffffff;
+  --faculty-background: #f4f7fb;
 
   display: flex;
   min-height: 100vh;
-
-  background: #f4f7fb;
+  background: var(--faculty-background);
   color: #172b45;
-
-  font-family: inherit;
+  font-family: Inter, Arial, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
-.faculty-layout * {
+.faculty-layout *,
+.faculty-layout *::before,
+.faculty-layout *::after {
   box-sizing: border-box;
 }
 
-/* ========================================
-   SIDEBAR WITH PBCC CAMPUS BACKGROUND
-======================================== */
+.faculty-layout button,
+.faculty-layout input,
+.faculty-layout select,
+.faculty-layout textarea,
+.faculty-layout table {
+  font: inherit;
+}
+
+.faculty-layout button {
+  cursor: pointer;
+}
+
+.faculty-layout button:disabled,
+.faculty-layout select:disabled {
+  cursor: not-allowed;
+}
+
+.faculty-layout button:focus-visible,
+.faculty-layout select:focus-visible {
+  outline: 3px solid rgba(214, 168, 73, 0.45);
+  outline-offset: 2px;
+}
+
+/* =========================================================
+   SIDEBAR
+   ========================================================= */
 
 .faculty-sidebar {
   position: fixed;
   inset: 0 auto 0 0;
   z-index: 30;
-
   width: 270px;
   height: 100vh;
-
   display: flex;
   flex-direction: column;
-
-  background-color: #102a4c;
-
+  background-color: var(--faculty-navy);
   background-image:
     linear-gradient(
       to bottom,
@@ -51,64 +75,33 @@
       rgba(16, 42, 76, 0.65) 100%
     ),
     url('/pbcc-background.jpg');
-
   background-size: cover;
   background-position: center bottom;
   background-repeat: no-repeat;
-
   color: #ffffff;
-
-  box-shadow: 4px 0 24px rgba(
-    10,
-    29,
-    54,
-    0.08
-  );
+  box-shadow: 4px 0 24px rgba(10, 29, 54, 0.08);
 }
-
-/* ========================================
-   SCHOOL BRANDING
-======================================== */
 
 .faculty-brand {
   min-height: 112px;
-
   display: flex;
   align-items: center;
   gap: 13px;
-
   padding: 23px 18px;
-
-  border-bottom: 1px solid rgba(
-    255,
-    255,
-    255,
-    0.12
-  );
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .faculty-brand img {
   width: 62px;
   height: 62px;
-
   flex-shrink: 0;
-
   object-fit: cover;
-  object-position: center;
-
   border-radius: 50%;
-  clip-path: circle(50% at 50% 50%);
-
-  background: transparent;
-  border: none;
-  padding: 0;
-
-  display: block;
+  clip-path: circle(50%);
 }
 
 .faculty-brand > div {
   min-width: 0;
-
   display: flex;
   flex-direction: column;
   gap: 5px;
@@ -116,7 +109,6 @@
 
 .faculty-brand strong {
   color: #ffffff;
-
   font-size: 23px;
   font-weight: 800;
   letter-spacing: 0.5px;
@@ -124,7 +116,6 @@
 
 .faculty-brand span {
   color: #e4bc5e;
-
   font-size: 12px;
   font-weight: 700;
 }
@@ -133,15 +124,9 @@
   display: none;
 }
 
-/* ========================================
-   SIDEBAR NAVIGATION
-======================================== */
-
 .faculty-sidebar-label {
   padding: 28px 24px 12px;
-
   color: #a8b8cc;
-
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 1.5px;
@@ -151,47 +136,31 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-
   padding: 0 13px;
 }
 
 .faculty-nav-item {
   width: 100%;
   min-height: 48px;
-
   display: flex;
   align-items: center;
   gap: 13px;
-
   padding: 12px 15px;
-
   border: none;
   border-left: 3px solid transparent;
   border-radius: 9px;
-
   background: transparent;
   color: #d7e2ef;
-
-  font-family: inherit;
   font-size: 13px;
   font-weight: 600;
   text-align: left;
-
-  cursor: pointer;
-
   transition:
     background 0.2s ease,
     color 0.2s ease;
 }
 
 .faculty-nav-item:hover {
-  background: rgba(
-    255,
-    255,
-    255,
-    0.09
-  );
-
+  background: rgba(255, 255, 255, 0.09);
   color: #ffffff;
 }
 
@@ -200,51 +169,26 @@
 }
 
 .faculty-nav-item.faculty-nav-active {
-  background: rgba(
-    214,
-    168,
-    73,
-    0.16
-  );
-
+  background: rgba(214, 168, 73, 0.16);
   color: #f1c46d;
-
   border-left-color: var(--faculty-gold);
 }
 
 .faculty-nav-item.faculty-nav-active:hover {
-  background: rgba(
-    214,
-    168,
-    73,
-    0.22
-  );
+  background: rgba(214, 168, 73, 0.22);
 }
-
-/* ========================================
-   SIDEBAR PROFILE AND LOGOUT
-======================================== */
 
 .faculty-sidebar-bottom {
   margin-top: auto;
-
   padding: 16px 15px 22px;
-
-  border-top: 1px solid rgba(
-    255,
-    255,
-    255,
-    0.12
-  );
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .faculty-sidebar-account {
   display: flex;
   align-items: center;
   gap: 11px;
-
   min-width: 0;
-
   padding: 10px 8px 18px;
 }
 
@@ -252,12 +196,9 @@
 .faculty-topbar-avatar {
   width: 40px;
   height: 40px;
-
   flex-shrink: 0;
-
   display: grid;
   place-items: center;
-
   border-radius: 50%;
 }
 
@@ -269,7 +210,6 @@
 .faculty-sidebar-account > div:last-child,
 .faculty-topbar-account > div:last-child {
   min-width: 0;
-
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -280,8 +220,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-
   font-size: 12px;
+  font-weight: 700;
 }
 
 .faculty-sidebar-account span {
@@ -291,79 +231,44 @@
 
 .faculty-logout-button {
   width: 100%;
-
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-
   padding: 12px;
-
-  border: 1px solid rgba(
-    255,
-    255,
-    255,
-    0.2
-  );
-
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 9px;
-
-  background: rgba(
-    255,
-    255,
-    255,
-    0.06
-  );
-
+  background: rgba(255, 255, 255, 0.06);
   color: #ffffff;
-
-  font-family: inherit;
   font-size: 12px;
   font-weight: 700;
-
-  cursor: pointer;
 }
 
 .faculty-logout-button:hover {
-  background: rgba(
-    255,
-    255,
-    255,
-    0.14
-  );
+  background: rgba(255, 255, 255, 0.14);
 }
 
-/* ========================================
-   MAIN LAYOUT
-======================================== */
+/* =========================================================
+   MAIN LAYOUT + TOP BAR
+   ========================================================= */
 
 .faculty-main {
   width: calc(100% - 270px);
   min-width: 0;
   min-height: 100vh;
-
   margin-left: 270px;
-
   display: flex;
   flex-direction: column;
 }
 
-/* ========================================
-   TOP NAVBAR
-======================================== */
-
 .faculty-topbar {
   min-height: 86px;
-
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-
   padding: 18px 34px;
-
   background: #ffffff;
-
   border-bottom: 1px solid var(--faculty-border);
 }
 
@@ -371,24 +276,19 @@
   display: flex;
   align-items: center;
   gap: 15px;
-
   min-width: 0;
 }
 
 .faculty-topbar h1 {
   margin: 0 0 5px;
-
   color: var(--faculty-navy);
-
   font-size: 22px;
   font-weight: 800;
 }
 
 .faculty-topbar p {
   margin: 0;
-
   color: var(--faculty-muted);
-
   font-size: 12px;
 }
 
@@ -416,53 +316,35 @@
   display: none;
 }
 
-/* ========================================
-   PAGE CONTENT
-======================================== */
-
 .faculty-content {
   width: 100%;
   max-width: 1500px;
-
   flex: 1;
-
   margin: 0 auto;
   padding: 30px 34px 42px;
 }
 
-/* ========================================
-   WELCOME BANNER
-======================================== */
+/* =========================================================
+   DASHBOARD WELCOME
+   ========================================================= */
 
 .faculty-welcome {
   min-height: 190px;
-
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 25px;
-
   padding: 34px 38px;
-
   border-radius: 15px;
-
-  background: linear-gradient(
-    120deg,
-    #102a4c,
-    #1b426d
-  );
-
+  background: linear-gradient(120deg, #102a4c, #1b426d);
   color: #ffffff;
   overflow: hidden;
 }
 
 .faculty-eyebrow {
   display: inline-block;
-
   margin-bottom: 12px;
-
   color: #e9bd5a;
-
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 1.7px;
@@ -470,23 +352,14 @@
 
 .faculty-welcome h2 {
   margin: 0 0 12px;
-
-  font-size: clamp(
-    23px,
-    3vw,
-    30px
-  );
-
+  font-size: clamp(23px, 3vw, 30px);
   font-weight: 800;
 }
 
 .faculty-welcome p {
   max-width: 620px;
-
   margin: 0;
-
   color: #d6e0ec;
-
   font-size: 13px;
   line-height: 1.8;
 }
@@ -494,64 +367,39 @@
 .faculty-welcome-emblem {
   width: 140px;
   height: 140px;
-
   flex-shrink: 0;
-
   display: grid;
   place-items: center;
-
-  border: 2px solid rgba(
-    214,
-    168,
-    73,
-    0.45
-  );
-
+  border: 2px solid rgba(214, 168, 73, 0.45);
   border-radius: 50%;
-
   padding: 9px;
 }
 
 .faculty-welcome-emblem img {
   width: 100%;
   height: 100%;
-
   object-fit: cover;
-
   border-radius: 50%;
-  clip-path: circle(50% at 50% 50%);
+  clip-path: circle(50%);
 }
 
-/* ========================================
-   OVERVIEW CARDS
-======================================== */
+/* =========================================================
+   DASHBOARD OVERVIEW
+   ========================================================= */
 
 .faculty-overview-grid {
   display: grid;
-
-  grid-template-columns: repeat(
-    4,
-    minmax(0, 1fr)
-  );
-
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 18px;
-
   margin-top: 24px;
 }
 
 .faculty-overview-card,
 .faculty-panel {
   background: #ffffff;
-
   border: 1px solid var(--faculty-border);
   border-radius: 13px;
-
-  box-shadow: 0 4px 18px rgba(
-    16,
-    42,
-    76,
-    0.035
-  );
+  box-shadow: 0 4px 18px rgba(16, 42, 76, 0.035);
 }
 
 .faculty-overview-card {
@@ -568,7 +416,6 @@
 
 .faculty-overview-top > span:first-child {
   color: #63738a;
-
   font-size: 12px;
   font-weight: 700;
 }
@@ -576,53 +423,38 @@
 .faculty-overview-icon {
   width: 39px;
   height: 39px;
-
   flex-shrink: 0;
-
   display: grid;
   place-items: center;
-
   border-radius: 10px;
-
   background: #fdf6e6;
   color: #b58722;
 }
 
 .faculty-overview-card > strong {
   display: block;
-
   margin: 12px 0 9px;
-
   color: var(--faculty-navy);
-
   font-size: 23px;
   font-weight: 800;
 }
 
 .faculty-overview-card > small {
   color: var(--faculty-muted);
-
   font-size: 11px;
   line-height: 1.6;
 }
 
-/* ========================================
-   DASHBOARD COLUMNS
-======================================== */
-
 .faculty-dashboard-columns {
   display: grid;
-
   grid-template-columns: 1.25fr 1fr;
-
   gap: 20px;
-
   margin-top: 24px;
 }
 
-/* ========================================
-   CONTENT PANELS
-======================================== */
+/* =========================================================
+   GENERAL PANELS
+   ========================================================= */
 
 .faculty-panel {
   padding: 24px;
@@ -633,40 +465,28 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 15px;
-
   padding-bottom: 19px;
-
   border-bottom: 1px solid #e8edf3;
-
   color: #b88a28;
 }
 
 .faculty-panel-heading h3 {
   margin: 0 0 6px;
-
   color: var(--faculty-navy);
-
   font-size: 17px;
   font-weight: 800;
 }
 
 .faculty-panel-heading p {
   margin: 0;
-
   color: var(--faculty-muted);
-
   font-size: 12px;
   line-height: 1.6;
 }
 
-/* ========================================
-   INFORMATION ROWS
-======================================== */
-
 .faculty-information-list {
   display: flex;
   flex-direction: column;
-
   margin-top: 8px;
 }
 
@@ -675,9 +495,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-
   padding: 15px 0;
-
   border-bottom: 1px solid #edf1f5;
 }
 
@@ -692,44 +510,31 @@
 
 .faculty-information-row strong {
   color: var(--faculty-navy);
-
   font-size: 12px;
+  font-weight: 700;
   text-align: right;
 }
-
-/* ========================================
-   QUICK ACCESS
-======================================== */
 
 .faculty-quick-links {
   display: flex;
   flex-direction: column;
   gap: 9px;
-
   padding-top: 18px;
 }
 
 .faculty-quick-link {
   width: 100%;
-
   display: flex;
   align-items: center;
   gap: 13px;
-
   padding: 13px 14px;
-
   border: 1px solid #e5eaf1;
   border-radius: 9px;
-
   background: #fbfcfe;
   color: var(--faculty-navy);
-
-  font-family: inherit;
   font-size: 12px;
   font-weight: 700;
   text-align: left;
-
-  cursor: pointer;
 }
 
 .faculty-quick-link:hover {
@@ -744,120 +549,109 @@
 .faculty-quick-icon {
   width: 34px;
   height: 34px;
-
   display: grid;
   place-items: center;
-
   border-radius: 8px;
-
   background: #edf2f8;
   color: #193a61;
 }
-
-/* ========================================
-   DEVELOPMENT NOTICE
-======================================== */
 
 .faculty-notice {
   display: flex;
   align-items: flex-start;
   gap: 13px;
-
   margin-top: 24px;
   padding: 19px 21px;
-
   border: 1px solid #f0dfb5;
   border-radius: 11px;
-
   background: #fffaf0;
   color: #a87918;
 }
 
 .faculty-notice strong {
   display: block;
-
   margin-bottom: 5px;
-
   font-size: 13px;
 }
 
 .faculty-notice p {
   margin: 0;
-
   color: #806b45;
-
   font-size: 12px;
   line-height: 1.7;
 }
 
-/* ========================================
-   FILTER PREVIEW
-======================================== */
+/* =========================================================
+   CLASS LISTS + GRADE MANAGEMENT
+   CLEANER SUBJECT SELECTION
+   ========================================================= */
 
 .faculty-filter-preview {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: 16px;
-
   flex-wrap: wrap;
 
-  padding: 22px 0 6px;
+  margin-top: 22px;
+  margin-bottom: 20px;
+  padding: 19px 20px;
+
+  background: #f7f9fd;
+  border: 1px solid #e4eaf2;
+  border-radius: 12px;
 }
 
 .faculty-filter-preview > div {
   display: flex;
+  flex: 1 1 360px;
   flex-direction: column;
-  gap: 8px;
-
-  min-width: 240px;
+  gap: 9px;
+  min-width: 0;
 }
 
 .faculty-filter-preview label {
-  color: #52647a;
-
-  font-size: 12px;
-  font-weight: 700;
+  color: #435a77;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.35px;
 }
 
 .faculty-filter-preview select {
-  min-height: 42px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 40px 10px 14px;
 
-  padding: 10px 13px;
-
-  border: 1px solid #dce4ee;
+  border: 1px solid #d6e0ec;
   border-radius: 9px;
 
-  background: #f7f9fc;
-  color: #718096;
+  background-color: #ffffff;
+  color: #193454;
 
-  font-family: inherit;
   font-size: 12px;
+  font-weight: 600;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
-.faculty-preview-label {
-  display: inline-flex;
+.faculty-filter-preview select:hover:not(:disabled) {
+  border-color: #a9bad0;
+}
 
-  padding: 8px 13px;
-
-  border-radius: 20px;
-
-  background: #fffaf0;
-  color: #a87918;
-
-  font-size: 10px;
-  font-weight: 800;
+.faculty-filter-preview select:focus {
+  border-color: var(--faculty-gold);
+  box-shadow: 0 0 0 3px rgba(214, 168, 73, 0.12);
 }
 
 .faculty-primary-button {
   min-height: 42px;
-
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 9px;
-
-  padding: 11px 17px;
+  padding: 10px 17px;
 
   border: 1px solid var(--faculty-navy);
   border-radius: 9px;
@@ -865,136 +659,521 @@
   background: var(--faculty-navy);
   color: #ffffff;
 
-  font-family: inherit;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: nowrap;
+
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.faculty-primary-button:not(:disabled):hover {
+  background: #1b426d;
+  box-shadow: 0 4px 12px rgba(16, 42, 76, 0.14);
+  transform: translateY(-1px);
 }
 
 .faculty-primary-button:disabled {
   opacity: 0.55;
-  cursor: not-allowed;
 }
 
-/* ========================================
-   TABLES
-======================================== */
+.faculty-refresh-button {
+  min-width: 116px;
+  min-height: 41px;
+  flex-shrink: 0;
+  padding: 10px 16px;
+  border: 1px solid #102a4c;
+  border-radius: 9px;
+  background: #102a4c;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: none;
+  transform: none;
+}
+
+.faculty-refresh-button:not(:disabled):hover {
+  background: #1b426d;
+  border-color: #1b426d;
+  box-shadow: none;
+  transform: none;
+}
+
+.faculty-refresh-button svg {
+  flex-shrink: 0;
+}
+
+/* =========================================================
+   TABLE STRUCTURE
+   ========================================================= */
 
 .faculty-table-wrapper {
   width: 100%;
-
   overflow-x: auto;
+  margin-top: 18px;
 
-  margin-top: 20px;
+  border: 1px solid #e3eaf2;
+  border-radius: 11px;
+  background: #ffffff;
+
+  scrollbar-width: thin;
+  scrollbar-color: #c7d3e1 #f4f7fb;
 }
 
 .faculty-table {
   width: 100%;
   min-width: 650px;
-
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   text-align: left;
+  font-size: 12px;
 }
 
 .faculty-table th {
-  padding: 15px 13px;
+  padding: 15px 16px;
 
-  background: #f5f8fc;
-  color: #566982;
+  background: #102a4c;
+  border-bottom: 3px solid #d6a849;
 
+  color: #ffffff;
   font-size: 11px;
   font-weight: 800;
-
+  letter-spacing: 0.25px;
   white-space: nowrap;
 }
 
-.faculty-table td {
-  padding: 12px;
-
-  border-bottom: 1px solid #e8edf3;
+.faculty-table th:first-child {
+  border-top-left-radius: 10px;
 }
 
-/* ========================================
+.faculty-table th:last-child {
+  border-top-right-radius: 10px;
+}
+
+.faculty-table td {
+  padding: 15px 16px;
+
+  border-bottom: 1px solid #edf1f5;
+
+  color: #243a55;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.55;
+  vertical-align: middle;
+}
+
+.faculty-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.faculty-layout .faculty-table tbody tr:nth-child(odd) > td {
+  background-color: #ffffff;
+}
+
+.faculty-layout .faculty-table tbody tr:nth-child(even) > td {
+  background-color: #f1f5f9;
+}
+
+.faculty-layout .faculty-table tbody tr:hover > td {
+  background-color: #e8f0fa;
+}
+
+.faculty-layout .faculty-table tbody tr > td {
+  transition: background-color 0.15s ease;
+}
+
+.faculty-table tbody td:first-child {
+  color: #173b66;
+  font-weight: 700;
+}
+
+.faculty-table tbody td:nth-child(2) {
+  color: #263d59;
+  font-weight: 600;
+}
+
+/* =========================================================
+   CLASS LISTS: STUDENT ROSTER
+   ========================================================= */
+
+/*
+   Class Lists has a two-column table.
+   Keep student numbers compact and names easy to read.
+*/
+
+.faculty-table:has(thead th:nth-child(2):last-child) {
+  min-width: 420px;
+}
+
+.faculty-table:has(thead th:nth-child(2):last-child)
+  th:first-child,
+.faculty-table:has(thead th:nth-child(2):last-child)
+  td:first-child {
+  width: 34%;
+}
+
+.faculty-table:has(thead th:nth-child(2):last-child)
+  td {
+  padding-top: 17px;
+  padding-bottom: 17px;
+}
+
+/* =========================================================
+   GRADE MANAGEMENT: SUBJECT INFORMATION
+   ========================================================= */
+
+/*
+   The Grade Management page displays its selected
+   subject information using .faculty-information-list.
+   Style it as a clean academic information card.
+*/
+
+.faculty-filter-preview + .faculty-information-list {
+  margin-top: 0;
+}
+
+.faculty-panel > .faculty-information-list {
+  margin-bottom: 20px;
+  padding: 8px 18px;
+
+  background: #fbfcfe;
+  border: 1px solid #e5ebf3;
+  border-radius: 11px;
+}
+
+.faculty-panel > .faculty-information-list
+  .faculty-information-row {
+  min-height: 45px;
+  padding: 11px 0;
+}
+
+.faculty-panel > .faculty-information-list
+  .faculty-information-row span {
+  color: #667b94;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.faculty-panel > .faculty-information-list
+  .faculty-information-row strong {
+  max-width: 65%;
+  color: #193454;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* =========================================================
+   GRADE MANAGEMENT: GRADE INPUT
+   ========================================================= */
+
+.faculty-grade-select {
+  width: 100%;
+  min-width: 95px;
+  max-width: 130px;
+  min-height: 39px;
+
+  padding: 8px 10px;
+
+  border: 1px solid #d2dce8;
+  border-radius: 8px;
+
+  background: #ffffff;
+  color: #173b66;
+
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.faculty-grade-select:hover:not(:disabled) {
+  border-color: #9bafc8;
+}
+
+.faculty-grade-select:focus {
+  border-color: var(--faculty-gold);
+}
+
+.faculty-grade-select:disabled {
+  background: #f1f5f9;
+  color: #718096;
+  border-color: #e2e8f0;
+}
+
+/* =========================================================
+   GRADE MANAGEMENT: REMARK BADGES
+   ========================================================= */
+
+.faculty-remark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 72px;
+  padding: 6px 10px;
+
+  border: 1px solid transparent;
+  border-radius: 999px;
+
+  background: #f1f5f9;
+  color: #64748b;
+
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.faculty-remark-passed {
+  background: #eaf7ee;
+  border-color: #cdebd6;
+  color: #166534;
+}
+
+.faculty-remark-failed {
+  background: #fef0f0;
+  border-color: #f8d7d7;
+  color: #b91c1c;
+}
+
+.faculty-remark-inc {
+  background: #fff6df;
+  border-color: #f3e2b5;
+  color: #986900;
+}
+
+.faculty-remark-dropped {
+  background: #edf2f8;
+  border-color: #dce4ee;
+  color: #475569;
+}
+
+.faculty-remark-not-encoded,
+.faculty-remark-invalid-grade {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+/* =========================================================
+   GRADE MANAGEMENT: STATUS + SAVE BUTTON
+   ========================================================= */
+
+.faculty-status-text {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 80px;
+  padding: 6px 10px;
+
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 7px;
+
+  color: #56677e;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.faculty-save-button {
+  min-width: 111px;
+  min-height: 37px;
+  padding: 9px 12px;
+
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.faculty-save-button:disabled {
+  box-shadow: none;
+}
+
+.faculty-row-message {
+  max-width: 150px;
+  margin-top: 8px;
+
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.faculty-message-success {
+  color: #166534;
+}
+
+.faculty-message-error {
+  color: #b91c1c;
+}
+
+/* =========================================================
+   GRADE MANAGEMENT: SEVEN-COLUMN TABLE
+   ========================================================= */
+
+/*
+   Give the wider grade sheet enough room to breathe.
+   On smaller screens, only the table scrolls horizontally.
+*/
+
+.faculty-table:has(thead th:nth-child(7)) {
+  min-width: 920px;
+}
+
+.faculty-table:has(thead th:nth-child(7))
+  th,
+.faculty-table:has(thead th:nth-child(7))
+  td {
+  padding-left: 13px;
+  padding-right: 13px;
+}
+
+.faculty-table:has(thead th:nth-child(7))
+  th:nth-child(1) {
+  min-width: 145px;
+}
+
+.faculty-table:has(thead th:nth-child(7))
+  th:nth-child(2) {
+  min-width: 175px;
+}
+
+.faculty-table:has(thead th:nth-child(7))
+  th:nth-child(3) {
+  min-width: 120px;
+}
+
+.faculty-table:has(thead th:nth-child(7))
+  th:nth-child(4) {
+  min-width: 135px;
+}
+
+.faculty-table:has(thead th:nth-child(7))
+  th:nth-child(5) {
+  min-width: 95px;
+}
+
+.faculty-table:has(thead th:nth-child(7))
+  th:nth-child(6) {
+  min-width: 105px;
+}
+
+.faculty-table:has(thead th:nth-child(7))
+  th:nth-child(7) {
+  min-width: 125px;
+}
+
+/* =========================================================
+   REFRESH / LOADING ANIMATION
+   ========================================================= */
+
+@keyframes faculty-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.faculty-spin,
+.faculty-refresh-spin {
+  animation: faculty-rotate 0.85s linear infinite;
+  transform-origin: center;
+  flex-shrink: 0;
+}
+
+/* Existing optional feedback styles */
+
+.faculty-loading-feedback,
+.faculty-success-feedback {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.faculty-loading-feedback {
+  background: #edf4fc;
+  border: 1px solid #d7e5f5;
+  color: #24466e;
+}
+
+.faculty-success-feedback {
+  background: #edf8f0;
+  border: 1px solid #d3e9d9;
+  color: #166534;
+}
+
+/* =========================================================
    EMPTY STATES
-======================================== */
+   ========================================================= */
 
 .faculty-empty-state {
-  min-height: 260px;
-
+  min-height: 235px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-
-  padding: 35px 18px;
-
+  padding: 30px 18px;
   text-align: center;
 }
 
 .faculty-empty-icon {
-  width: 67px;
-  height: 67px;
-
+  width: 62px;
+  height: 62px;
   display: grid;
   place-items: center;
+  margin-bottom: 15px;
 
-  margin-bottom: 17px;
-
-  border-radius: 18px;
-
+  border-radius: 17px;
   background: #edf2f8;
   color: #24466e;
 }
 
 .faculty-empty-state h4 {
-  margin: 0 0 10px;
-
+  margin: 0 0 9px;
   color: var(--faculty-navy);
-  font-size: 16px;
+  font-size: 15px;
+  font-weight: 800;
 }
 
 .faculty-empty-state p {
   max-width: 440px;
-
   margin: 0;
-
   color: var(--faculty-muted);
-
   font-size: 12px;
-  line-height: 1.8;
+  line-height: 1.7;
 }
 
-.faculty-coming-soon {
-  display: inline-block;
-
-  margin-top: 20px;
-  padding: 7px 13px;
-
-  border: 1px solid #f0dfb5;
-  border-radius: 20px;
-
-  background: #fffaf0;
-  color: #a87918;
-
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-}
-
-/* ========================================
-   INLINE NOTES
-======================================== */
+/* =========================================================
+   NOTICES / ERRORS / INFORMATION
+   ========================================================= */
 
 .faculty-inline-note {
   display: flex;
   align-items: flex-start;
   gap: 10px;
 
-  margin-top: 20px;
-  padding: 15px;
+  margin-top: 18px;
+  padding: 14px 16px;
 
+  border: 1px solid #e3eaf2;
   border-radius: 9px;
 
-  background: #f5f8fc;
+  background: #f7f9fc;
   color: #65768d;
 }
 
@@ -1004,21 +1183,17 @@
 
 .faculty-inline-note p {
   margin: 0;
-
   font-size: 12px;
   line-height: 1.7;
 }
 
-/* ========================================
-   PROFILE PAGE
-======================================== */
+/* =========================================================
+   PROFILE
+   ========================================================= */
 
 .faculty-profile-layout {
   display: grid;
-
-  grid-template-columns:
-    300px minmax(0, 1fr);
-
+  grid-template-columns: 300px minmax(0, 1fr);
   gap: 22px;
 }
 
@@ -1026,35 +1201,29 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-
   text-align: center;
 }
 
 .faculty-profile-avatar {
   width: 96px;
   height: 96px;
-
   display: grid;
   place-items: center;
-
   margin: 15px 0 19px;
-
   border-radius: 50%;
-
   background: #edf2f8;
   color: var(--faculty-navy);
 }
 
 .faculty-profile-card h3 {
   margin: 0 0 7px;
-
   color: var(--faculty-navy);
   font-size: 19px;
+  font-weight: 700;
 }
 
 .faculty-profile-card > p {
   margin: 0;
-
   color: var(--faculty-muted);
   font-size: 12px;
 }
@@ -1062,172 +1231,152 @@
 .faculty-profile-label {
   margin-top: 25px;
   padding: 12px;
-
   border-radius: 9px;
-
   background: #f5f8fc;
   color: #65768d;
-
   font-size: 11px;
   line-height: 1.7;
 }
 
-/* ========================================
+/* =========================================================
    FOOTER
-======================================== */
+   ========================================================= */
 
 .faculty-footer {
   padding: 18px 30px;
-
   border-top: 1px solid var(--faculty-border);
-
   color: #8793a3;
-
   font-size: 11px;
   text-align: center;
 }
 
-/* ========================================
-   MOBILE SIDEBAR OVERLAY
-======================================== */
+/* =========================================================
+   MODALS: LOGOUT + SUBMIT GRADES
+   ========================================================= */
 
 .faculty-sidebar-overlay {
   display: none;
 }
 
-/* ========================================
-   LOGOUT MODAL
-======================================== */
-
 .faculty-modal-overlay {
   position: fixed;
   inset: 0;
   z-index: 100;
-
   display: grid;
   place-items: center;
-
   padding: 20px;
-
-  background: rgba(
-    7,
-    19,
-    36,
-    0.65
-  );
+  background: rgba(7, 19, 36, 0.65);
 }
 
 .faculty-logout-modal {
   width: 100%;
-  max-width: 420px;
-
+  max-width: 440px;
   padding: 34px;
-
+  border: 1px solid #e4eaf2;
   border-radius: 15px;
-
   background: #ffffff;
-
   text-align: center;
-
-  box-shadow: 0 25px 80px rgba(
-    0,
-    0,
-    0,
-    0.2
-  );
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.2);
 }
 
 .faculty-modal-icon {
   width: 64px;
   height: 64px;
-
   display: grid;
   place-items: center;
-
   margin: 0 auto 18px;
-
   border-radius: 50%;
-
   background: #fff2e7;
   color: #b46d2d;
 }
 
 .faculty-logout-modal h2 {
   margin: 0 0 11px;
-
   color: var(--faculty-navy);
   font-size: 20px;
+  font-weight: 800;
 }
 
 .faculty-logout-modal p {
-  margin: 0;
-
+  margin: 0 0 10px;
   color: var(--faculty-muted);
-
   font-size: 13px;
   line-height: 1.7;
+}
+
+.faculty-logout-modal p strong {
+  color: var(--faculty-navy);
 }
 
 .faculty-modal-actions {
   display: flex;
   gap: 12px;
-
   margin-top: 27px;
 }
 
 .faculty-modal-actions button {
   flex: 1;
-
+  min-height: 44px;
   padding: 12px;
-
   border-radius: 9px;
-
-  font-family: inherit;
   font-size: 12px;
-  font-weight: 800;
-
-  cursor: pointer;
+  font-weight: 700;
 }
 
 .faculty-modal-cancel {
   border: 1px solid #dce4ee;
-
   background: #ffffff;
   color: var(--faculty-navy);
 }
 
+.faculty-modal-cancel:hover:not(:disabled) {
+  background: #f5f8fc;
+}
+
 .faculty-modal-confirm {
   border: 1px solid var(--faculty-navy);
-
   background: var(--faculty-navy);
   color: #ffffff;
 }
 
-/* ========================================
-   RESPONSIVE - TABLET
-======================================== */
+.faculty-modal-confirm:hover:not(:disabled) {
+  background: #1b426d;
+}
+
+.faculty-modal-actions button:disabled {
+  opacity: 0.55;
+}
+
+/* =========================================================
+   RESPONSIVE: LAPTOP
+   ========================================================= */
 
 @media (max-width: 1200px) {
   .faculty-overview-grid {
-    grid-template-columns: repeat(
-      2,
-      minmax(0, 1fr)
-    );
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .faculty-dashboard-columns {
     grid-template-columns: 1fr;
   }
+
+  .faculty-content {
+    padding-left: 26px;
+    padding-right: 26px;
+  }
+
+  .faculty-panel {
+    padding: 22px;
+  }
 }
 
-/* ========================================
-   RESPONSIVE - MOBILE
-======================================== */
+/* =========================================================
+   RESPONSIVE: TABLET
+   ========================================================= */
 
 @media (max-width: 900px) {
   .faculty-sidebar {
     transform: translateX(-100%);
-
     transition: transform 0.25s ease;
   }
 
@@ -1239,32 +1388,19 @@
     position: fixed;
     inset: 0;
     z-index: 25;
-
     display: block;
-
     border: none;
-
-    background: rgba(
-      7,
-      19,
-      36,
-      0.55
-    );
+    background: rgba(7, 19, 36, 0.55);
   }
 
   .faculty-sidebar-close {
     display: grid;
     place-items: center;
-
     margin-left: auto;
     padding: 5px;
-
     border: none;
-
     background: transparent;
     color: #ffffff;
-
-    cursor: pointer;
   }
 
   .faculty-main {
@@ -1275,17 +1411,12 @@
   .faculty-menu-button {
     display: grid;
     place-items: center;
-
     width: 39px;
     height: 39px;
-
     border: 1px solid #e0e7f0;
     border-radius: 9px;
-
     background: #ffffff;
     color: var(--faculty-navy);
-
-    cursor: pointer;
   }
 
   .faculty-content {
@@ -1295,11 +1426,15 @@
   .faculty-topbar {
     padding: 17px 24px;
   }
+
+  .faculty-table:has(thead th:nth-child(7)) {
+    min-width: 920px;
+  }
 }
 
-/* ========================================
-   RESPONSIVE - SMALL SCREENS
-======================================== */
+/* =========================================================
+   RESPONSIVE: MOBILE
+   ========================================================= */
 
 @media (max-width: 600px) {
   .faculty-content {
@@ -1341,6 +1476,14 @@
     padding: 18px;
   }
 
+  .faculty-panel-heading {
+    padding-bottom: 16px;
+  }
+
+  .faculty-panel-heading h3 {
+    font-size: 16px;
+  }
+
   .faculty-profile-layout {
     grid-template-columns: 1fr;
   }
@@ -1349,11 +1492,142 @@
     align-items: flex-start;
   }
 
+  .faculty-filter-preview {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 13px;
+    padding: 16px;
+    margin-top: 18px;
+    margin-bottom: 18px;
+  }
+
+  .faculty-filter-preview > div {
+    width: 100%;
+    flex: none;
+    min-width: 0;
+  }
+
+  .faculty-filter-preview select {
+    width: 100%;
+    font-size: 12px;
+  }
+
+  .faculty-refresh-button {
+    width: 100%;
+  }
+
+  .faculty-panel > .faculty-information-list {
+    padding: 7px 13px;
+  }
+
+  .faculty-panel > .faculty-information-list
+    .faculty-information-row {
+    gap: 10px;
+  }
+
+  .faculty-panel > .faculty-information-list
+    .faculty-information-row strong {
+    max-width: 60%;
+    overflow-wrap: anywhere;
+  }
+
+  .faculty-table-wrapper {
+    margin-top: 16px;
+  }
+
+  .faculty-table th,
+  .faculty-table td {
+    padding: 12px;
+  }
+
+  .faculty-table:has(thead th:nth-child(2):last-child) {
+    min-width: 400px;
+  }
+
   .faculty-modal-actions {
     flex-direction: column;
   }
 
-  .faculty-filter-preview > div {
-    min-width: 100%;
+  .faculty-logout-modal {
+    padding: 25px 20px;
+  }
+
+  .faculty-logout-modal h2 {
+    font-size: 18px;
+  }
+}
+
+/* =========================================================
+   ACCESSIBILITY
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .faculty-layout .faculty-table tbody tr > td {
+    transition: none;
+  }
+
+  .faculty-spin,
+  .faculty-refresh-spin {
+    animation-duration: 2s;
+  }
+
+  .faculty-primary-button,
+  .faculty-nav-item,
+  .faculty-sidebar {
+    transition: none;
+  }
+}
+
+/* =========================================================
+   DESKTOP COLLAPSIBLE SIDEBAR
+   ========================================================= */
+
+@media (min-width: 901px) {
+  .faculty-desktop-sidebar-toggle {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    border: 1px solid #e0e7f0;
+    border-radius: 9px;
+    background: #ffffff;
+    color: var(--faculty-navy);
+    transition: background-color 0.2s ease;
+  }
+
+  .faculty-desktop-sidebar-toggle:hover {
+    background: #edf2f8;
+  }
+
+  .faculty-sidebar,
+  .faculty-main {
+    transition:
+      transform 0.25s ease,
+      margin-left 0.25s ease,
+      width 0.25s ease;
+  }
+
+  .faculty-layout-collapsed .faculty-sidebar {
+    transform: translateX(-100%);
+    pointer-events: none;
+  }
+
+  .faculty-layout-collapsed .faculty-main {
+    width: 100%;
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 900px) {
+  .faculty-desktop-sidebar-toggle {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .faculty-sidebar,
+  .faculty-main {
+    transition: none;
   }
 }

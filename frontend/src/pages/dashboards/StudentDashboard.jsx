@@ -1,5 +1,5 @@
 
-import { useContext, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -9,6 +9,7 @@ import {
   UserRound,
   LogOut,
   Menu,
+  PanelLeftClose,
   X,
   ChevronRight,
   CalendarDays,
@@ -16,10 +17,17 @@ import {
   ShieldCheck,
   Info,
   School,
+  RefreshCw,
+  AlertCircle,
+  CheckCircle2,
 } from 'lucide-react';
 
 import { AuthContext } from '../../context/auth-context';
 import './StudentDashboard.css';
+
+const API_BASE_URL = (
+  import.meta.env.VITE_API_URL || 'http://localhost:5000'
+).replace(/\/$/, '');
 
 const navigation = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -29,11 +37,11 @@ const navigation = [
   { id: 'profile', label: 'Profile', icon: UserRound },
 ];
 
-const pageDescriptions = {
+const descriptions = {
   dashboard: 'Overview of student academic information and enrollment.',
   enrollment: 'View enrollment information and application status.',
-  subjects: 'View subjects assigned for the academic term.',
-  grades: 'View academic grades and results.',
+  subjects: 'View subjects enrolled for an academic semester.',
+  grades: 'View officially released academic grades by semester.',
   profile: 'View student account and academic information.',
 };
 
@@ -43,19 +51,218 @@ function StudentDashboard() {
 
   const [activeSection, setActiveSection] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
-  const user = auth?.user;
-  const displayName = user?.username || 'Student';
+  const [periods, setPeriods] = useState([]);
+  const [selectedPeriodId, setSelectedPeriodId] = useState('');
+  const [periodsStatus, setPeriodsStatus] = useState('idle');
+
+  const [subjects, setSubjects] = useState([]);
+  const [subjectsStatus, setSubjectsStatus] = useState('idle');
+
+  const [grades, setGrades] = useState([]);
+  const [gradesStatus, setGradesStatus] = useState('idle');
+
+  const [periodsError, setPeriodsError] = useState('');
+  const [subjectsError, setSubjectsError] = useState('');
+  const [gradesError, setGradesError] = useState('');
+  const [studentNumber, setStudentNumber] = useState('');
+
+  const periodsRequestRef = useRef(0);
+  const subjectsRequestRef = useRef(0);
+  const gradesRequestRef = useRef(0);
+
+  const displayName = auth?.user?.username || 'Student';
 
   const currentPage =
     navigation.find((item) => item.id === activeSection) ||
     navigation[0];
 
+  const selectedPeriod = periods.find(
+    (period) => String(period.period_id) === selectedPeriodId
+  );
+
+  const filteredSubjects = subjects.filter(
+    (item) => String(item.period_id) === selectedPeriodId
+  );
+
+  const filteredGrades = grades.filter(
+    (item) => String(item.period_id) === selectedPeriodId
+  );
+
+  async function studentGet(path) {
+    const token = localStorage.getItem('pbcc_access_token');
+
+    if (!token) {
+      throw new Error(
+        'Your session is unavailable. Please log in again.'
+      );
+    }
+
+    const response = await fetch(
+      `${API_BASE_URL}/api/student/${path}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+        },
+      }
+    );
+
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(
+        result.message || 'Unable to retrieve student records.'
+      );
+    }
+
+    return result;
+  }
+
+  async function loadPeriods() {
+    const requestId = ++periodsRequestRef.current;
+
+    setPeriodsStatus('loading');
+    setPeriodsError('');
+
+    try {
+      const result = await studentGet('periods');
+
+      if (requestId !== periodsRequestRef.current) return;
+
+      const rows = Array.isArray(result.periods)
+        ? result.periods
+        : [];
+
+      setPeriods(rows);
+      setStudentNumber(result.student_no || '');
+      setPeriodsStatus('success');
+
+      setSelectedPeriodId((previous) => {
+        if (
+          rows.some(
+            (period) =>
+              String(period.period_id) === previous
+          )
+        ) {
+          return previous;
+        }
+
+        return rows.length
+          ? String(rows[0].period_id)
+          : '';
+      });
+    } catch (error) {
+      if (requestId !== periodsRequestRef.current) return;
+
+      setPeriodsError(error.message);
+      setPeriodsStatus('error');
+    }
+  }
+
+  async function loadSubjects() {
+    const requestId = ++subjectsRequestRef.current;
+
+    setSubjectsStatus('loading');
+    setSubjectsError('');
+
+    try {
+      const result = await studentGet('subjects');
+
+      if (requestId !== subjectsRequestRef.current) return;
+
+      setSubjects(
+        Array.isArray(result.subjects) ? result.subjects : []
+      );
+      setStudentNumber(result.student_no || '');
+      setSubjectsStatus('success');
+    } catch (error) {
+      if (requestId !== subjectsRequestRef.current) return;
+
+      setSubjectsError(error.message);
+      setSubjectsStatus('error');
+    }
+  }
+
+  async function loadGrades() {
+    const requestId = ++gradesRequestRef.current;
+
+    setGradesStatus('loading');
+    setGradesError('');
+
+    try {
+      const result = await studentGet('grades');
+
+      if (requestId !== gradesRequestRef.current) return;
+
+      setGrades(
+        Array.isArray(result.grades) ? result.grades : []
+      );
+      setStudentNumber(result.student_no || '');
+      setGradesStatus('success');
+    } catch (error) {
+      if (requestId !== gradesRequestRef.current) return;
+
+      setGradesError(error.message);
+      setGradesStatus('error');
+    }
+  }
+
+  useEffect(() => {
+    if (
+      ['subjects', 'grades'].includes(activeSection) &&
+      periodsStatus === 'idle'
+    ) {
+      loadPeriods();
+    }
+  }, [activeSection, periodsStatus]);
+
+  useEffect(() => {
+    if (
+      activeSection === 'subjects' &&
+      subjectsStatus === 'idle'
+    ) {
+      loadSubjects();
+    }
+  }, [activeSection, subjectsStatus]);
+
+  useEffect(() => {
+    if (
+      activeSection === 'grades' &&
+      gradesStatus === 'idle'
+    ) {
+      loadGrades();
+    }
+  }, [activeSection, gradesStatus]);
+
+  const subjectsLoading =
+    periodsStatus === 'loading' ||
+    subjectsStatus === 'loading';
+
+  const gradesLoading =
+    periodsStatus === 'loading' ||
+    gradesStatus === 'loading';
+
   function changeSection(section) {
     setActiveSection(section);
     setSidebarOpen(false);
+  }
+
+  async function refreshCurrentSection() {
+    const requests = [loadPeriods()];
+
+    if (activeSection === 'subjects') {
+      requests.push(loadSubjects());
+    }
+
+    if (activeSection === 'grades') {
+      requests.push(loadGrades());
+    }
+
+    await Promise.all(requests);
   }
 
   async function handleLogout() {
@@ -74,6 +281,98 @@ function StudentDashboard() {
       setLoggingOut(false);
       setShowLogoutModal(false);
     }
+  }
+
+  function renderPeriodSelector() {
+    const busy =
+      activeSection === 'subjects'
+        ? subjectsLoading
+        : gradesLoading;
+
+    return (
+      <div className="student-grades-toolbar">
+        <div className="student-grades-heading">
+          <strong>
+            {activeSection === 'grades'
+              ? 'Report of Grades'
+              : 'Subject Enrollment List'}
+          </strong>
+
+          <span>
+            {studentNumber
+              ? `Student No. ${studentNumber}`
+              : 'Official student records'}
+          </span>
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            gap: 10,
+            alignItems: 'center',
+            flexWrap: 'wrap',
+          }}
+        >
+          <select
+            aria-label="Select academic semester"
+            value={selectedPeriodId}
+            onChange={(event) =>
+              setSelectedPeriodId(event.target.value)
+            }
+            disabled={
+              busy ||
+              periodsStatus !== 'success' ||
+              periods.length === 0
+            }
+            style={{
+              minHeight: 40,
+              minWidth: 230,
+              maxWidth: '100%',
+              padding: '8px 12px',
+              border: '1px solid #cbd5e1',
+              borderRadius: 7,
+              backgroundColor: '#fff',
+              color: '#172b4d',
+              fontSize: 14,
+              fontWeight: 600,
+            }}
+          >
+            {periods.length === 0 && (
+              <option value="">
+                {periodsStatus === 'loading'
+                  ? 'Loading semesters...'
+                  : 'No enrolled semester'}
+              </option>
+            )}
+
+            {periods.map((period) => (
+              <option
+                key={period.period_id}
+                value={String(period.period_id)}
+              >
+                {period.label ||
+                  `${period.school_year} ${period.semester}`}
+              </option>
+            ))}
+          </select>
+
+          <button
+            type="button"
+            className="student-grades-refresh"
+            onClick={refreshCurrentSection}
+            disabled={busy}
+          >
+            <RefreshCw
+              size={16}
+              className={
+                busy ? 'student-grades-spinning' : ''
+              }
+            />
+            Refresh
+          </button>
+        </div>
+      </div>
+    );
   }
 
   function renderDashboard() {
@@ -96,7 +395,7 @@ function StudentDashboard() {
 
           <img
             src="/pbcc-logo.png"
-            alt="Pangantucan Bukidnon Community College Seal"
+            alt="PBCC Seal"
             className="student-welcome-logo"
           />
         </section>
@@ -112,22 +411,33 @@ function StudentDashboard() {
           <OverviewCard
             icon={BookOpen}
             label="Enrolled Subjects"
-            value="—"
-            description="Subject information not yet connected"
+            value={
+              subjectsStatus === 'success'
+                ? String(filteredSubjects.length)
+                : '—'
+            }
+            description="Open Subjects to view records"
           />
 
           <OverviewCard
             icon={GraduationCap}
             label="Academic Grades"
-            value="—"
-            description="Grade information not yet connected"
+            value={
+              gradesStatus === 'success'
+                ? String(filteredGrades.length)
+                : '—'
+            }
+            description="Released grades only"
           />
 
           <OverviewCard
             icon={CalendarDays}
             label="Academic Term"
-            value="Not assigned"
-            description="Academic calendar not yet configured"
+            value={selectedPeriod?.school_year || 'Not assigned'}
+            description={
+              selectedPeriod?.semester ||
+              'Select an academic term'
+            }
           />
         </section>
 
@@ -136,10 +446,7 @@ function StudentDashboard() {
             <div className="student-panel-heading">
               <div>
                 <h3>Academic Overview</h3>
-                <p>
-                  Student academic information will
-                  appear here once available.
-                </p>
+                <p>Student academic information.</p>
               </div>
 
               <School size={21} />
@@ -148,7 +455,7 @@ function StudentDashboard() {
             <div className="student-information-list">
               <InformationRow
                 label="Student Number"
-                value="Not assigned"
+                value={studentNumber || 'Not assigned'}
               />
               <InformationRow
                 label="Program"
@@ -183,15 +490,14 @@ function StudentDashboard() {
                     <button
                       key={item.id}
                       type="button"
-                      onClick={() => changeSection(item.id)}
                       className="student-quick-link"
+                      onClick={() => changeSection(item.id)}
                     >
                       <span className="student-quick-icon">
                         <Icon size={19} />
                       </span>
 
                       <span>{item.label}</span>
-
                       <ChevronRight size={17} />
                     </button>
                   );
@@ -206,10 +512,8 @@ function StudentDashboard() {
           <div>
             <strong>Portal Development Notice</strong>
             <p>
-              The student portal interface is currently
-              being prepared. Enrollment, subject, and
-              grade information will be connected during
-              the next development phase.
+              Enrolled subjects and released grades are
+              available through their respective pages.
             </p>
           </div>
         </section>
@@ -223,9 +527,7 @@ function StudentDashboard() {
         <div className="student-panel-heading">
           <div>
             <h3>Enrollment Information</h3>
-            <p>
-              Review enrollment details and academic status.
-            </p>
+            <p>Review enrollment details and status.</p>
           </div>
 
           <ClipboardList size={22} />
@@ -253,94 +555,277 @@ function StudentDashboard() {
         <EmptyState
           icon={Clock3}
           title="Enrollment module coming soon"
-          description="Online enrollment details and enrollment processing will be available once this module is implemented."
+          description="Online enrollment details will be available once this module is implemented."
         />
       </section>
     );
   }
 
   function renderSubjects() {
+    let content = null;
+    const error = periodsError || subjectsError;
+
+    if (subjectsLoading) {
+      content = (
+        <LoadingMessage text="Loading enrolled subjects..." />
+      );
+    } else if (error) {
+      content = <ErrorMessage message={error} />;
+    } else if (
+      periodsStatus === 'success' &&
+      subjectsStatus === 'success'
+    ) {
+      if (filteredSubjects.length === 0) {
+        content = (
+          <div className="student-grades-empty">
+            <div className="student-grades-empty-icon">
+              <BookOpen size={30} />
+            </div>
+
+            <h4>No enrolled subjects found</h4>
+            <p>
+              No subjects were found for the selected semester.
+            </p>
+          </div>
+        );
+      } else {
+        content = (
+          <>
+            <div className="student-grades-summary">
+              <div>
+                <span>Enrolled Subjects</span>
+                <strong>{filteredSubjects.length}</strong>
+              </div>
+
+              <div>
+                <span>Total Units</span>
+                <strong>
+                  {filteredSubjects.reduce(
+                    (sum, item) =>
+                      sum + (Number(item.units) || 0),
+                    0
+                  )}
+                </strong>
+              </div>
+            </div>
+
+            <div className="student-table-wrapper student-grades-table-wrapper">
+              <table className="student-table student-grades-table">
+                <thead>
+                  <tr>
+                    <th>Subject Code</th>
+                    <th>Subject Description</th>
+                    <th>Units</th>
+                    <th>Instructor</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {filteredSubjects.map((item) => (
+                    <tr key={item.enrollment_id}>
+                      <td>
+                        <strong>
+                          {item.subject_code || '—'}
+                        </strong>
+                      </td>
+
+                      <td>{item.subject_title || '—'}</td>
+
+                      <td>{item.units ?? '—'}</td>
+
+                      <td>
+                        {item.instructor || 'Not available'}
+                      </td>
+
+                      <td>
+                        <span
+                          style={{
+                            fontWeight: 600,
+                            color:
+                              item.load_status === 'Regular'
+                                ? '#166534'
+                                : item.load_status === 'Irregular'
+                                ? '#b45309'
+                                : '#64748b',
+                          }}
+                        >
+                          {item.load_status || 'Not determined'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        );
+      }
+    }
+
     return (
       <section className="student-panel">
         <div className="student-panel-heading">
           <div>
-            <h3>Subjects</h3>
+            <h3>My Enrolled Subjects</h3>
             <p>
-              View enrolled subjects for the selected
-              academic term.
+              View your subjects by academic year and
+              semester. This information is read-only.
             </p>
           </div>
 
           <BookOpen size={22} />
         </div>
 
-        <div className="student-table-wrapper">
-          <table className="student-table">
-            <thead>
-              <tr>
-                <th>Subject Code</th>
-                <th>Subject Description</th>
-                <th>Units</th>
-                <th>Instructor</th>
-                <th>Schedule</th>
-              </tr>
-            </thead>
+        {renderPeriodSelector()}
+        {content}
 
-            <tbody>
-              <tr>
-                <td colSpan={5}>
-                  <EmptyState
-                    icon={BookOpen}
-                    title="No subjects to display"
-                    description="Enrolled subjects will appear here once the enrollment module is connected."
-                  />
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div className="student-grades-note">
+          <ShieldCheck size={17} />
+          <p>
+            Academic load status is determined from the
+            prescribed curriculum and enrolled subjects.
+          </p>
         </div>
       </section>
     );
   }
 
   function renderGrades() {
+    let content = null;
+    const error = periodsError || gradesError;
+
+    if (gradesLoading) {
+      content = (
+        <LoadingMessage text="Loading academic grades..." />
+      );
+    } else if (error) {
+      content = <ErrorMessage message={error} />;
+    } else if (
+      periodsStatus === 'success' &&
+      gradesStatus === 'success'
+    ) {
+      if (filteredGrades.length === 0) {
+        content = (
+          <div className="student-grades-empty">
+            <div className="student-grades-empty-icon">
+              <GraduationCap size={30} />
+            </div>
+
+            <h4>No released grades yet</h4>
+            <p>
+              Officially released grades for this semester
+              will appear here when available.
+            </p>
+          </div>
+        );
+      } else {
+        content = (
+          <>
+            <div className="student-grades-summary">
+              <div>
+                <span>Released Grades</span>
+                <strong>{filteredGrades.length}</strong>
+              </div>
+
+              <div>
+                <span>Academic Record</span>
+                <strong>
+                  <CheckCircle2 size={16} />
+                  Available
+                </strong>
+              </div>
+            </div>
+
+            <div className="student-table-wrapper student-grades-table-wrapper">
+              <table className="student-table student-grades-table">
+                <thead>
+                  <tr>
+                    <th>Subject Code</th>
+                    <th>Subject Description</th>
+                    <th>Units</th>
+                    <th>Grade</th>
+                    <th>Remarks</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {filteredGrades.map((item) => {
+                    const remark = String(
+                      item.remarks || ''
+                    ).trim();
+
+                    const normalized = remark.toLowerCase();
+
+                    const remarkClass =
+                      normalized === 'passed'
+                        ? 'student-grade-passed'
+                        : normalized === 'failed'
+                        ? 'student-grade-failed'
+                        : normalized === 'inc'
+                        ? 'student-grade-inc'
+                        : normalized === 'dropped'
+                        ? 'student-grade-dropped'
+                        : 'student-grade-neutral';
+
+                    return (
+                      <tr key={item.enrollment_id}>
+                        <td>
+                          <strong>
+                            {item.subject_code || '—'}
+                          </strong>
+                        </td>
+
+                        <td>{item.subject_title || '—'}</td>
+                        <td>{item.units ?? '—'}</td>
+
+                        <td>
+                          <span className="student-grade-value">
+                            {item.grade || '—'}
+                          </span>
+                        </td>
+
+                        <td>
+                          <span
+                            className={`student-grade-remark ${remarkClass}`}
+                          >
+                            {remark || '—'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
+        );
+      }
+    }
+
     return (
       <section className="student-panel">
         <div className="student-panel-heading">
           <div>
             <h3>Academic Grades</h3>
             <p>
-              Review grades recorded for enrolled subjects.
+              View officially released grades by semester.
+              Draft, submitted, and validated grades are hidden.
             </p>
           </div>
 
           <GraduationCap size={22} />
         </div>
 
-        <div className="student-table-wrapper">
-          <table className="student-table">
-            <thead>
-              <tr>
-                <th>Subject Code</th>
-                <th>Subject Description</th>
-                <th>Units</th>
-                <th>Grade</th>
-                <th>Remarks</th>
-              </tr>
-            </thead>
+        {renderPeriodSelector()}
+        {content}
 
-            <tbody>
-              <tr>
-                <td colSpan={5}>
-                  <EmptyState
-                    icon={GraduationCap}
-                    title="No grades to display"
-                    description="Academic grades will appear here once the grade management module is connected."
-                  />
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div className="student-grades-note">
+          <ShieldCheck size={17} />
+          <p>
+            Only officially released grades are shown.
+            For questions, contact the appropriate college office.
+          </p>
         </div>
       </section>
     );
@@ -366,9 +851,7 @@ function StudentDashboard() {
           <div className="student-panel-heading">
             <div>
               <h3>Student Information</h3>
-              <p>
-                Account and academic profile overview.
-              </p>
+              <p>Account and academic profile overview.</p>
             </div>
 
             <ShieldCheck size={22} />
@@ -381,7 +864,7 @@ function StudentDashboard() {
             />
             <InformationRow
               label="Student Number"
-              value="Not assigned"
+              value={studentNumber || 'Not assigned'}
             />
             <InformationRow
               label="Program"
@@ -411,19 +894,23 @@ function StudentDashboard() {
     switch (activeSection) {
       case 'enrollment':
         return renderEnrollment();
+
       case 'subjects':
         return renderSubjects();
+
       case 'grades':
         return renderGrades();
+
       case 'profile':
         return renderProfile();
+
       default:
         return renderDashboard();
     }
   }
 
   return (
-    <div className="student-layout">
+    <div className={`student-layout ${sidebarCollapsed ? 'student-layout-collapsed' : ''}`}>
       {sidebarOpen && (
         <button
           type="button"
@@ -434,15 +921,13 @@ function StudentDashboard() {
       )}
 
       <aside
+        id="student-sidebar"
         className={`student-sidebar ${
           sidebarOpen ? 'student-sidebar-open' : ''
         }`}
       >
         <div className="student-brand">
-          <img
-            src="/pbcc-logo.png"
-            alt="PBCC Logo"
-          />
+          <img src="/pbcc-logo.png" alt="PBCC Logo" />
 
           <div>
             <strong>PBCC</strong>
@@ -525,6 +1010,18 @@ function StudentDashboard() {
           <div className="student-topbar-left">
             <button
               type="button"
+              className="student-desktop-sidebar-toggle"
+              aria-label={sidebarCollapsed ? 'Show sidebar' : 'Hide sidebar'}
+              aria-expanded={!sidebarCollapsed}
+              aria-controls="student-sidebar"
+              title={sidebarCollapsed ? 'Show sidebar' : 'Hide sidebar'}
+              onClick={() => setSidebarCollapsed((previous) => !previous)}
+            >
+              {sidebarCollapsed ? <Menu size={22} /> : <PanelLeftClose size={22} />}
+            </button>
+
+            <button
+              type="button"
               className="student-menu-button"
               aria-label="Open navigation"
               onClick={() => setSidebarOpen(true)}
@@ -534,7 +1031,7 @@ function StudentDashboard() {
 
             <div>
               <h1>{currentPage.label}</h1>
-              <p>{pageDescriptions[activeSection]}</p>
+              <p>{descriptions[activeSection]}</p>
             </div>
           </div>
 
@@ -609,12 +1106,7 @@ function StudentDashboard() {
   );
 }
 
-function OverviewCard({
-  icon: Icon,
-  label,
-  value,
-  description,
-}) {
+function OverviewCard({ icon: Icon, label, value, description }) {
   return (
     <article className="student-overview-card">
       <div className="student-overview-top">
@@ -640,11 +1132,7 @@ function InformationRow({ label, value }) {
   );
 }
 
-function EmptyState({
-  icon: Icon,
-  title,
-  description,
-}) {
+function EmptyState({ icon: Icon, title, description }) {
   return (
     <div className="student-empty-state">
       <div className="student-empty-icon">
@@ -657,6 +1145,39 @@ function EmptyState({
       <span className="student-coming-soon">
         Interface Preview
       </span>
+    </div>
+  );
+}
+
+function ErrorMessage({ message }) {
+  return (
+    <div className="student-grades-error" role="alert">
+      <AlertCircle size={18} />
+      <span>{message}</span>
+    </div>
+  );
+}
+
+function LoadingMessage({ text }) {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 10,
+        padding: '30px 16px',
+        color: '#64748b',
+        fontSize: 14,
+      }}
+    >
+      <RefreshCw
+        size={17}
+        className="student-grades-spinning"
+      />
+      <span>{text}</span>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 
 /* ========================================
    PBCC REGISTRAR PERSONNEL PORTAL
+   COMPLETE STYLESHEET
 ======================================== */
 
 .registrar-layout {
@@ -16,10 +17,19 @@
   color: #172b45;
 
   font-family: inherit;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .registrar-layout * {
   box-sizing: border-box;
+}
+
+.registrar-layout button,
+.registrar-layout input,
+.registrar-layout select,
+.registrar-layout textarea {
+  font-family: inherit;
 }
 
 /* ========================================
@@ -56,12 +66,7 @@
 
   color: #ffffff;
 
-  box-shadow: 4px 0 24px rgba(
-    10,
-    29,
-    54,
-    0.08
-  );
+  box-shadow: 4px 0 24px rgba(10, 29, 54, 0.08);
 }
 
 /* ========================================
@@ -77,12 +82,7 @@
 
   padding: 23px 18px;
 
-  border-bottom: 1px solid rgba(
-    255,
-    255,
-    255,
-    0.12
-  );
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .registrar-brand img {
@@ -183,13 +183,7 @@
 }
 
 .registrar-nav-item:hover {
-  background: rgba(
-    255,
-    255,
-    255,
-    0.09
-  );
-
+  background: rgba(255, 255, 255, 0.09);
   color: #ffffff;
 }
 
@@ -198,12 +192,7 @@
 }
 
 .registrar-nav-item.registrar-nav-active {
-  background: rgba(
-    214,
-    168,
-    73,
-    0.16
-  );
+  background: rgba(214, 168, 73, 0.16);
 
   color: #f1c46d;
 
@@ -211,12 +200,7 @@
 }
 
 .registrar-nav-item.registrar-nav-active:hover {
-  background: rgba(
-    214,
-    168,
-    73,
-    0.22
-  );
+  background: rgba(214, 168, 73, 0.22);
 }
 
 /* ========================================
@@ -228,12 +212,7 @@
 
   padding: 16px 15px 22px;
 
-  border-top: 1px solid rgba(
-    255,
-    255,
-    255,
-    0.12
-  );
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .registrar-sidebar-account {
@@ -297,22 +276,10 @@
 
   padding: 12px;
 
-  border: 1px solid rgba(
-    255,
-    255,
-    255,
-    0.2
-  );
-
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 9px;
 
-  background: rgba(
-    255,
-    255,
-    255,
-    0.06
-  );
-
+  background: rgba(255, 255, 255, 0.06);
   color: #ffffff;
 
   font-family: inherit;
@@ -323,12 +290,7 @@
 }
 
 .registrar-logout-button:hover {
-  background: rgba(
-    255,
-    255,
-    255,
-    0.14
-  );
+  background: rgba(255, 255, 255, 0.14);
 }
 
 /* ========================================
@@ -378,8 +340,9 @@
 
   color: var(--registrar-navy);
 
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 800;
+  line-height: 1.35;
 }
 
 .registrar-topbar p {
@@ -388,6 +351,7 @@
   color: var(--registrar-muted);
 
   font-size: 12px;
+  line-height: 1.5;
 }
 
 .registrar-topbar-account {
@@ -469,12 +433,7 @@
 .registrar-welcome h2 {
   margin: 0 0 12px;
 
-  font-size: clamp(
-    23px,
-    3vw,
-    30px
-  );
-
+  font-size: clamp(23px, 3vw, 30px);
   font-weight: 800;
 }
 
@@ -498,13 +457,7 @@
   display: grid;
   place-items: center;
 
-  border: 2px solid rgba(
-    214,
-    168,
-    73,
-    0.45
-  );
-
+  border: 2px solid rgba(214, 168, 73, 0.45);
   border-radius: 50%;
 
   padding: 9px;
@@ -527,10 +480,7 @@
 .registrar-overview-grid {
   display: grid;
 
-  grid-template-columns: repeat(
-    4,
-    minmax(0, 1fr)
-  );
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 
   gap: 18px;
 
@@ -544,12 +494,7 @@
   border: 1px solid var(--registrar-border);
   border-radius: 13px;
 
-  box-shadow: 0 4px 18px rgba(
-    16,
-    42,
-    76,
-    0.035
-  );
+  box-shadow: 0 4px 18px rgba(16, 42, 76, 0.035);
 }
 
 .registrar-overview-card {
@@ -644,8 +589,9 @@
 
   color: var(--registrar-navy);
 
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 800;
+  line-height: 1.4;
 }
 
 .registrar-panel-heading p {
@@ -686,12 +632,14 @@
 .registrar-information-row span {
   color: #68788c;
   font-size: 12px;
+  line-height: 1.5;
 }
 
 .registrar-information-row strong {
   color: var(--registrar-navy);
 
   font-size: 12px;
+  line-height: 1.5;
   text-align: right;
 }
 
@@ -753,7 +701,7 @@
 }
 
 /* ========================================
-   DEVELOPMENT NOTICE
+   NOTICE
 ======================================== */
 
 .registrar-notice {
@@ -838,7 +786,12 @@
   color: var(--registrar-navy);
 
   font-family: inherit;
-  font-size: 12px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.registrar-search-field input::placeholder {
+  color: #8793a3;
 }
 
 .registrar-preview-label {
@@ -857,6 +810,7 @@
 
 /* ========================================
    TABLES
+   UNIFORM TYPOGRAPHY
 ======================================== */
 
 .registrar-table-wrapper {
@@ -867,30 +821,139 @@
   margin-top: 20px;
 }
 
-.registrar-table {
+.registrar-layout .registrar-table {
   width: 100%;
   min-width: 720px;
 
   border-collapse: collapse;
   text-align: left;
+
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
-.registrar-table th {
-  padding: 15px 13px;
+.registrar-layout .registrar-table th {
+  padding: 12px 13px;
 
   background: #f5f8fc;
   color: #566982;
 
-  font-size: 11px;
-  font-weight: 800;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+
+  text-align: left;
+  vertical-align: middle;
 
   white-space: nowrap;
 }
 
-.registrar-table td {
-  padding: 12px;
+.registrar-layout .registrar-table td {
+  padding: 12px 13px;
 
   border-bottom: 1px solid #e8edf3;
+
+  color: var(--registrar-navy);
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.5;
+
+  vertical-align: middle;
+}
+
+.registrar-layout .registrar-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.registrar-layout .registrar-table td strong {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.registrar-layout .registrar-table td > div {
+  font-family: inherit;
+}
+
+/* Ensure nested subject tables match the main table. */
+
+.registrar-layout .registrar-table
+  .registrar-table {
+  font-size: 13px;
+}
+
+.registrar-layout .registrar-table
+  .registrar-table th {
+  font-size: 12px;
+}
+
+.registrar-layout .registrar-table
+  .registrar-table td {
+  font-size: 13px;
+}
+
+/* Subject codes must not appear oversized. */
+
+.registrar-layout .registrar-table
+  td strong,
+.registrar-layout .registrar-table
+  td b {
+  font-size: inherit;
+  font-weight: 600;
+}
+
+/* Consistent table action buttons. */
+
+.registrar-layout .registrar-table button {
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+/* Consistent status labels in table cells. */
+
+.registrar-layout .registrar-table
+  td span[style*="border-radius"] {
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+/* ========================================
+   EXPANDED ENROLLMENT REVIEW
+======================================== */
+
+/* The expanded review currently uses inline
+   styles in RegistrarDashboard.jsx.
+
+   These rules ensure that subject names,
+   codes, unit counts, and headers remain
+   consistent with the main table.
+*/
+
+.registrar-layout .registrar-panel
+  .registrar-table {
+  font-size: 13px;
+}
+
+.registrar-layout .registrar-panel
+  .registrar-table td {
+  font-size: 13px;
+}
+
+.registrar-layout .registrar-panel
+  .registrar-table td strong {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.registrar-layout .registrar-panel
+  .registrar-table th {
+  font-size: 12px;
 }
 
 /* ========================================
@@ -930,6 +993,7 @@
 
   color: var(--registrar-navy);
   font-size: 16px;
+  font-weight: 700;
 }
 
 .registrar-empty-state p {
@@ -1076,7 +1140,8 @@
 }
 
 /* ========================================
-   LOGOUT MODAL
+   MODALS
+   LOGOUT AND ENROLLMENT CONFIRMATION
 ======================================== */
 
 .registrar-modal-overlay {
@@ -1089,12 +1154,7 @@
 
   padding: 20px;
 
-  background: rgba(
-    7,
-    19,
-    36,
-    0.65
-  );
+  background: rgba(7, 19, 36, 0.65);
 }
 
 .registrar-logout-modal {
@@ -1109,12 +1169,7 @@
 
   text-align: center;
 
-  box-shadow: 0 25px 80px rgba(
-    0,
-    0,
-    0,
-    0.2
-  );
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.2);
 }
 
 .registrar-modal-icon {
@@ -1137,6 +1192,7 @@
 
   color: var(--registrar-navy);
   font-size: 20px;
+  font-weight: 800;
 }
 
 .registrar-logout-modal p {
@@ -1146,6 +1202,10 @@
 
   font-size: 13px;
   line-height: 1.7;
+}
+
+.registrar-logout-modal p + p {
+  margin-top: 12px;
 }
 
 .registrar-modal-actions {
@@ -1185,6 +1245,20 @@
 
 .registrar-modal-actions button:disabled {
   opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ========================================
+   INTERACTIVE ELEMENTS
+======================================== */
+
+.registrar-layout button:focus-visible,
+.registrar-layout input:focus-visible {
+  outline: 2px solid var(--registrar-gold);
+  outline-offset: 2px;
+}
+
+.registrar-layout button:disabled {
   cursor: not-allowed;
 }
 
@@ -1229,12 +1303,7 @@
 
     border: none;
 
-    background: rgba(
-      7,
-      19,
-      36,
-      0.55
-    );
+    background: rgba(7, 19, 36, 0.55);
   }
 
   .registrar-sidebar-close {
@@ -1279,6 +1348,10 @@
 
   .registrar-topbar {
     padding: 17px 24px;
+  }
+
+  .registrar-profile-layout {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1340,5 +1413,23 @@
 
   .registrar-search-field {
     max-width: 100%;
+  }
+
+  .registrar-layout .registrar-table th {
+    padding: 11px 10px;
+    font-size: 12px;
+  }
+
+  .registrar-layout .registrar-table td {
+    padding: 11px 10px;
+    font-size: 13px;
+  }
+
+  .registrar-panel-heading h3 {
+    font-size: 16px;
+  }
+
+  .registrar-logout-modal {
+    padding: 25px 20px;
   }
 }

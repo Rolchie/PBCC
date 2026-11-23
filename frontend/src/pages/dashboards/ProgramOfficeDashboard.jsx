@@ -1,3 +1,4 @@
+
 import { useContext, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -8,6 +9,7 @@ import {
   FileCheck2,
   LogOut,
   Menu,
+  PanelLeftClose,
   X,
   UserRound,
   GraduationCap,
@@ -17,7 +19,7 @@ import {
   Database,
   AlertTriangle,
   ShieldCheck,
-  Info
+  Info,
 } from 'lucide-react';
 
 import { AuthContext } from '../../context/auth-context';
@@ -28,39 +30,59 @@ import SubjectLoads from '../../components/SubjectLoads';
 import './ProgramOfficeDashboard.css';
 
 const navigation = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'students', label: 'Student Records', icon: Users },
-  { id: 'offerings', label: 'Subject Offerings', icon: BookOpen },
-  { id: 'loads', label: 'Subject Loads', icon: ClipboardList },
+  {
+    id: 'dashboard',
+    label: 'Dashboard',
+    icon: LayoutDashboard,
+  },
+  {
+    id: 'students',
+    label: 'Student Records',
+    icon: Users,
+  },
+  {
+    id: 'offerings',
+    label: 'Subject Offerings',
+    icon: BookOpen,
+  },
+  {
+    id: 'loads',
+    label: 'Subject Loads',
+    icon: ClipboardList,
+  },
   {
     id: 'preparation',
     label: 'Enrollment Preparation',
-    icon: FileCheck2
+    icon: FileCheck2,
   },
-  { id: 'profile', label: 'Profile', icon: UserRound }
+  {
+    id: 'profile',
+    label: 'Profile',
+    icon: UserRound,
+  },
 ];
 
 const statistics = [
   {
     title: 'Student Records',
     icon: Users,
-    description: 'Awaiting dashboard statistics integration'
+    description: 'Awaiting dashboard statistics integration',
   },
   {
     title: 'Subject Offerings',
     icon: BookOpen,
-    description: 'Browse approved curriculum subjects'
+    description: 'Browse approved curriculum subjects',
   },
   {
     title: 'Enrollment Records',
     icon: GraduationCap,
-    description: 'Awaiting database integration'
+    description: 'Awaiting database integration',
   },
   {
     title: 'Academic Period',
     icon: CalendarDays,
-    description: 'Awaiting database integration'
-  }
+    description: 'Awaiting database integration',
+  },
 ];
 
 const modules = [
@@ -69,34 +91,34 @@ const modules = [
     title: 'Student Records',
     icon: Users,
     description:
-      'Review student information for enrollment preparation.'
+      'Review student information for enrollment preparation.',
   },
   {
     id: 'offerings',
     title: 'Subject Offerings',
     icon: BookOpen,
     description:
-      'Browse approved subjects for your assigned program and curriculum.'
+      'Browse approved subjects for your assigned program and curriculum.',
   },
   {
     id: 'loads',
     title: 'Subject Loads',
     icon: ClipboardList,
     description:
-      'Prepare class sections for academic periods.'
+      'Prepare class sections for academic periods.',
   },
   {
     id: 'preparation',
     title: 'Enrollment Preparation',
     icon: FileCheck2,
     description:
-      'Review prepared enrollment records before Registrar confirmation.'
-  }
+      'Review prepared enrollment records before Registrar confirmation.',
+  },
 ];
 
 const moduleDescriptions = {
   preparation:
-    'Prepared enrollment records will be reviewed here before they are forwarded for Registrar confirmation.'
+    'Prepared enrollment records will be reviewed here before they are forwarded for Registrar confirmation.',
 };
 
 function ProgramOfficeDashboard() {
@@ -104,7 +126,13 @@ function ProgramOfficeDashboard() {
   const navigate = useNavigate();
 
   const [activeSection, setActiveSection] = useState('dashboard');
+
+  // Mobile sidebar
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Desktop sidebar toggle
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
@@ -117,7 +145,7 @@ function ProgramOfficeDashboard() {
   const fullName = [
     user?.first_name,
     user?.middle_name,
-    user?.last_name
+    user?.last_name,
   ]
     .filter(Boolean)
     .join(' ')
@@ -139,6 +167,10 @@ function ProgramOfficeDashboard() {
   function changeSection(section) {
     setActiveSection(section);
     setSidebarOpen(false);
+  }
+
+  function toggleDesktopSidebar() {
+    setSidebarCollapsed((previous) => !previous);
   }
 
   function openLogoutModal() {
@@ -242,10 +274,10 @@ function ProgramOfficeDashboard() {
             <h2>Welcome to the Program Office!</h2>
 
             <p>
-              Prepare student enrollment records, review subject
-              offerings, verify prerequisites, and organize
-              subject loads for Pangantucan Bukidnon
-              Community College.
+              Prepare student enrollment records, review
+              subject offerings, verify prerequisites,
+              and organize subject loads for Pangantucan
+              Bukidnon Community College.
             </p>
           </div>
 
@@ -317,7 +349,10 @@ function ProgramOfficeDashboard() {
 
                   <span className="program-module-link">
                     Open module
-                    <ArrowRight size={15} strokeWidth={1.8} />
+                    <ArrowRight
+                      size={15}
+                      strokeWidth={1.8}
+                    />
                   </span>
                 </button>
               );
@@ -372,7 +407,9 @@ function ProgramOfficeDashboard() {
           <div className="program-profile-panel-heading">
             <div>
               <h3>Personnel Information</h3>
-              <p>Account and personnel profile overview.</p>
+              <p>
+                Account and personnel profile overview.
+              </p>
             </div>
 
             <ShieldCheck size={22} />
@@ -437,7 +474,14 @@ function ProgramOfficeDashboard() {
   }
 
   return (
-    <div className="program-layout">
+    <div
+      className={`program-layout ${
+        sidebarCollapsed
+          ? 'program-layout-collapsed'
+          : ''
+      }`}
+    >
+      {/* Mobile overlay */}
       {sidebarOpen && (
         <button
           type="button"
@@ -447,7 +491,9 @@ function ProgramOfficeDashboard() {
         />
       )}
 
+      {/* Sidebar */}
       <aside
+        id="program-sidebar"
         className={`program-sidebar ${
           sidebarOpen ? 'program-sidebar-open' : ''
         }`}
@@ -504,7 +550,10 @@ function ProgramOfficeDashboard() {
                 }
               >
                 <span className="program-nav-icon">
-                  <Icon size={19} strokeWidth={1.8} />
+                  <Icon
+                    size={19}
+                    strokeWidth={1.8}
+                  />
                 </span>
 
                 <span className="program-nav-label">
@@ -512,7 +561,10 @@ function ProgramOfficeDashboard() {
                 </span>
 
                 {activeSection === item.id && (
-                  <ChevronRight size={15} strokeWidth={1.8} />
+                  <ChevronRight
+                    size={15}
+                    strokeWidth={1.8}
+                  />
                 )}
               </button>
             );
@@ -522,14 +574,20 @@ function ProgramOfficeDashboard() {
         <div className="program-sidebar-bottom">
           <div className="program-sidebar-profile">
             <div className="program-profile-avatar">
-              <UserRound size={20} strokeWidth={1.8} />
+              <UserRound
+                size={20}
+                strokeWidth={1.8}
+              />
             </div>
 
             <div className="program-profile-details">
               <strong title={displayName}>
                 {displayName}
               </strong>
-              <span>Program Office Personnel</span>
+
+              <span>
+                Program Office Personnel
+              </span>
             </div>
           </div>
 
@@ -539,26 +597,68 @@ function ProgramOfficeDashboard() {
             className="program-logout-button"
             onClick={openLogoutModal}
           >
-            <LogOut size={18} strokeWidth={1.8} />
+            <LogOut
+              size={18}
+              strokeWidth={1.8}
+            />
             <span>Log Out</span>
           </button>
         </div>
       </aside>
 
+      {/* Main */}
       <div className="program-main">
         <header className="program-topbar">
           <div className="program-topbar-left">
+            {/* Desktop hide/show sidebar */}
+            <button
+              type="button"
+              className="program-desktop-sidebar-toggle"
+              aria-label={
+                sidebarCollapsed
+                  ? 'Show sidebar'
+                  : 'Hide sidebar'
+              }
+              aria-expanded={!sidebarCollapsed}
+              aria-controls="program-sidebar"
+              title={
+                sidebarCollapsed
+                  ? 'Show sidebar'
+                  : 'Hide sidebar'
+              }
+              onClick={toggleDesktopSidebar}
+            >
+              {sidebarCollapsed ? (
+                <Menu
+                  size={22}
+                  strokeWidth={1.8}
+                />
+              ) : (
+                <PanelLeftClose
+                  size={22}
+                  strokeWidth={1.8}
+                />
+              )}
+            </button>
+
+            {/* Mobile hamburger */}
             <button
               type="button"
               className="program-menu-button"
               aria-label="Open navigation"
+              aria-expanded={sidebarOpen}
+              aria-controls="program-sidebar"
               onClick={() => setSidebarOpen(true)}
             >
-              <Menu size={24} strokeWidth={1.8} />
+              <Menu
+                size={24}
+                strokeWidth={1.8}
+              />
             </button>
 
             <div className="program-topbar-heading">
               <h1>{currentSection.label}</h1>
+
               <p>
                 Pangantucan Bukidnon Community College
               </p>
@@ -567,14 +667,20 @@ function ProgramOfficeDashboard() {
 
           <div className="program-topbar-account">
             <div className="program-topbar-avatar">
-              <UserRound size={20} strokeWidth={1.8} />
+              <UserRound
+                size={20}
+                strokeWidth={1.8}
+              />
             </div>
 
             <div className="program-topbar-user-details">
               <strong title={displayName}>
                 {displayName}
               </strong>
-              <span>Program Office Personnel</span>
+
+              <span>
+                Program Office Personnel
+              </span>
             </div>
           </div>
         </header>
@@ -589,6 +695,7 @@ function ProgramOfficeDashboard() {
         </footer>
       </div>
 
+      {/* Logout confirmation */}
       {showLogoutModal && (
         <div className="program-modal-overlay">
           <div
@@ -599,7 +706,10 @@ function ProgramOfficeDashboard() {
             aria-describedby="program-logout-description"
           >
             <div className="program-modal-icon">
-              <LogOut size={27} strokeWidth={1.8} />
+              <LogOut
+                size={27}
+                strokeWidth={1.8}
+              />
             </div>
 
             <h2 id="program-logout-title">
@@ -608,12 +718,16 @@ function ProgramOfficeDashboard() {
 
             <p id="program-logout-description">
               Are you sure you want to log out?
-              You will need to sign in again to access
-              your Program Office dashboard.
+              You will need to sign in again to
+              access your Program Office dashboard.
             </p>
 
             <div className="program-modal-notice">
-              <AlertTriangle size={17} strokeWidth={1.8} />
+              <AlertTriangle
+                size={17}
+                strokeWidth={1.8}
+              />
+
               <span>
                 Your current session will be ended.
               </span>
@@ -637,7 +751,11 @@ function ProgramOfficeDashboard() {
                 onClick={confirmLogout}
                 disabled={loggingOut}
               >
-                <LogOut size={17} strokeWidth={1.8} />
+                <LogOut
+                  size={17}
+                  strokeWidth={1.8}
+                />
+
                 {loggingOut
                   ? 'Logging out...'
                   : 'Yes, Log Out'}

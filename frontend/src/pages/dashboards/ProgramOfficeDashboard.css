@@ -1,10 +1,27 @@
 
+/* =========================================================
+   PBCC PROGRAM OFFICE PERSONNEL PORTAL
+   COMPLETE DASHBOARD STYLESHEET
+   Navy Blue and Gold Theme
+========================================================= */
+
+/* =========================================================
+   1. MAIN LAYOUT AND VARIABLES
+========================================================= */
+
 .program-layout {
   --program-navy: #102a4c;
+  --program-navy-dark: #0b1e37;
+  --program-navy-light: #244d7b;
   --program-gold: #d6a849;
+  --program-gold-dark: #b48727;
+  --program-background: #f3f5fa;
+  --program-border: #e3e8f0;
+  --program-muted: #718096;
+
   display: flex;
   min-height: 100vh;
-  background: #f3f5fa;
+  background: var(--program-background);
   color: var(--program-navy);
   font-family: inherit;
 }
@@ -15,14 +32,39 @@
   box-sizing: border-box;
 }
 
+.program-layout button,
+.program-layout input,
+.program-layout select,
+.program-layout textarea {
+  font-family: inherit;
+}
+
+.program-layout button:focus-visible,
+.program-layout input:focus-visible,
+.program-layout select:focus-visible,
+.program-layout textarea:focus-visible {
+  outline: 3px solid rgba(214, 168, 73, 0.45);
+  outline-offset: 2px;
+}
+
+/* =========================================================
+   2. SIDEBAR
+========================================================= */
+
 .program-sidebar {
   position: fixed;
   inset: 0 auto 0 0;
   z-index: 30;
+
   display: flex;
   flex-direction: column;
+
   width: 265px;
+  height: 100vh;
+
+  overflow-x: hidden;
   overflow-y: auto;
+
   background:
     linear-gradient(
       180deg,
@@ -31,38 +73,55 @@
       rgba(16, 42, 76, 0.78) 100%
     ),
     url('/pbcc-background.jpg') center bottom / cover;
-  color: #fff;
+
+  color: #ffffff;
+
+  box-shadow: 4px 0 20px rgba(16, 42, 76, 0.08);
+
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
 }
+
+/* =========================================================
+   3. SCHOOL BRANDING
+========================================================= */
 
 .program-brand {
   display: flex;
   align-items: center;
   gap: 12px;
+
   min-height: 118px;
   padding: 22px 14px;
+
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .program-brand-logo {
   display: block;
+
   width: 55px;
   height: 55px;
+
   flex-shrink: 0;
+
   object-fit: contain;
+
   border-radius: 50%;
   background: transparent;
-  mix-blend-mode: normal;
 }
 
 .program-brand-text {
   display: flex;
   flex-direction: column;
-  min-width: 0;
   gap: 5px;
+
+  min-width: 0;
 }
 
 .program-brand-text strong {
   color: var(--program-gold);
+
   font-size: 13px;
   font-weight: 800;
   line-height: 1.4;
@@ -73,18 +132,25 @@
   font-size: 11px;
 }
 
+/* =========================================================
+   4. SIDEBAR NAVIGATION
+========================================================= */
+
 .program-sidebar-caption {
   padding: 29px 22px 12px;
-  color: #8eadd0;
-  font-size: 11px;
+
+  color: #9bb7d5;
+
+  font-size: 10px;
   font-weight: 800;
-  letter-spacing: 1.2px;
+  letter-spacing: 1.3px;
 }
 
 .program-navigation {
   display: flex;
   flex-direction: column;
   gap: 5px;
+
   padding: 0 10px;
 }
 
@@ -92,28 +158,40 @@
   display: flex;
   align-items: center;
   gap: 15px;
+
   width: 100%;
   min-height: 51px;
+
   padding: 12px 17px;
+
   border: 0;
   border-left: 3px solid transparent;
   border-radius: 10px;
+
   background: transparent;
   color: #dce6f3;
-  font-family: inherit;
+
   font-size: 12px;
   font-weight: 650;
   text-align: left;
+
   cursor: pointer;
+
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
 }
 
-.program-nav-item:hover,
-.program-nav-active {
-  background: rgba(255, 255, 255, 0.12);
-  color: var(--program-gold);
+.program-nav-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
 }
 
-.program-nav-active {
+.program-nav-active,
+.program-nav-item.program-nav-active:hover {
+  background: rgba(214, 168, 73, 0.16);
+  color: #f1c46d;
   border-left-color: var(--program-gold);
 }
 
@@ -126,15 +204,22 @@
   flex: 1;
 }
 
+/* =========================================================
+   5. SIDEBAR ACCOUNT AND LOGOUT
+========================================================= */
+
 .program-sidebar-bottom {
   margin-top: auto;
   padding: 22px 14px 18px;
+
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .program-sidebar-profile {
   display: flex;
   align-items: center;
   gap: 11px;
+
   padding: 0 4px 18px;
 }
 
@@ -142,10 +227,14 @@
 .program-topbar-avatar {
   display: grid;
   place-items: center;
+
   width: 40px;
   height: 40px;
+
   flex-shrink: 0;
+
   border-radius: 50%;
+
   background: var(--program-gold);
   color: var(--program-navy);
 }
@@ -154,16 +243,20 @@
 .program-topbar-user-details {
   display: flex;
   flex-direction: column;
-  min-width: 0;
   gap: 4px;
+
+  min-width: 0;
 }
 
 .program-profile-details strong,
 .program-topbar-user-details strong {
   overflow: hidden;
-  color: #fff;
+
+  color: #ffffff;
+
   font-size: 12px;
   font-weight: 800;
+
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -177,41 +270,60 @@
   display: flex;
   align-items: center;
   gap: 12px;
+
   width: 100%;
   min-height: 45px;
+
   padding: 11px 14px;
+
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 9px;
+
   background: rgba(255, 255, 255, 0.08);
-  color: #fff;
-  font-family: inherit;
+  color: #ffffff;
+
   font-size: 12px;
   font-weight: 700;
+
   cursor: pointer;
+
+  transition: background-color 0.2s ease;
 }
 
 .program-logout-button:hover {
   background: rgba(255, 255, 255, 0.16);
 }
 
+/* =========================================================
+   6. MAIN CONTENT
+========================================================= */
+
 .program-main {
   display: flex;
   flex: 1;
   flex-direction: column;
+
   min-width: 0;
   min-height: 100vh;
+
   margin-left: 265px;
 }
+
+/* =========================================================
+   7. TOP NAVIGATION BAR
+========================================================= */
 
 .program-topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
+
   min-height: 96px;
   padding: 18px 36px;
+
   border-bottom: 1px solid #e0e6ef;
-  background: #fff;
+  background: #ffffff;
 }
 
 .program-topbar-left,
@@ -219,17 +331,26 @@
   display: flex;
   align-items: center;
   gap: 13px;
+
+  min-width: 0;
+}
+
+.program-topbar-heading {
   min-width: 0;
 }
 
 .program-topbar-heading h1 {
   margin: 0 0 6px;
+
+  color: var(--program-navy);
+
   font-size: 24px;
   font-weight: 800;
 }
 
 .program-topbar-heading p {
   margin: 0;
+
   color: #7b8ba2;
   font-size: 12px;
 }
@@ -243,22 +364,45 @@
   font-size: 11px;
 }
 
+.program-topbar-avatar {
+  background: #edf2f8;
+}
+
+/* =========================================================
+   8. PAGE CONTENT
+========================================================= */
+
 .program-content {
   flex: 1;
+
   width: 100%;
+  min-width: 0;
+
   padding: 34px 36px 45px;
 }
+
+/* =========================================================
+   9. WELCOME BANNER
+========================================================= */
 
 .program-welcome {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 25px;
+
   min-height: 190px;
   padding: 35px;
+
   border-radius: 16px;
-  background: linear-gradient(110deg, #102a4c, #244d7b);
-  color: #fff;
+
+  background: linear-gradient(
+    110deg,
+    #102a4c,
+    #244d7b
+  );
+
+  color: #ffffff;
 }
 
 .program-welcome-content {
@@ -267,6 +411,7 @@
 
 .program-eyebrow {
   color: var(--program-gold);
+
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 1.4px;
@@ -274,14 +419,18 @@
 
 .program-welcome h2 {
   margin: 15px 0;
-  color: #fff;
+
+  color: #ffffff;
+
   font-size: clamp(22px, 3vw, 30px);
   font-weight: 800;
 }
 
 .program-welcome p {
   margin: 0;
+
   color: #e6edf7;
+
   font-size: 13px;
   line-height: 1.9;
 }
@@ -290,26 +439,38 @@
   display: flex;
   align-items: center;
   justify-content: center;
+
   flex-shrink: 0;
+
   width: 128px;
   height: 128px;
+
   border: 1px solid rgba(214, 168, 73, 0.7);
   border-radius: 50%;
 }
 
 .program-welcome-emblem img {
   display: block;
+
   width: 115px;
   height: 115px;
+
   object-fit: contain;
-  background: transparent;
-  mix-blend-mode: normal;
   border-radius: 50%;
 }
 
+/* =========================================================
+   10. DASHBOARD STATISTICS
+========================================================= */
+
 .program-stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+
+  grid-template-columns: repeat(
+    4,
+    minmax(0, 1fr)
+  );
+
   gap: 18px;
   margin-top: 26px;
 }
@@ -319,7 +480,9 @@
 .program-panel {
   border: 1px solid #e3e8f0;
   border-radius: 14px;
-  background: #fff;
+
+  background: #ffffff;
+
   box-shadow: 0 5px 18px rgba(16, 42, 76, 0.035);
 }
 
@@ -343,17 +506,25 @@
 .program-module-icon {
   display: grid;
   place-items: center;
+
   width: 43px;
   height: 43px;
+
   flex-shrink: 0;
+
   border-radius: 12px;
+
   background: #f8f0df;
   color: #b48727;
 }
 
 .program-stat-value {
   display: block;
+
   margin: 20px 0 10px;
+
+  color: var(--program-navy);
+
   font-size: 29px;
   font-weight: 800;
 }
@@ -363,25 +534,36 @@
   font-size: 11px;
 }
 
+/* =========================================================
+   11. ENROLLMENT MANAGEMENT MODULES
+========================================================= */
+
 .program-modules-section {
   margin-top: 38px;
 }
 
 .program-section-heading h3 {
   margin: 0 0 9px;
+
   font-size: 20px;
   font-weight: 800;
 }
 
 .program-section-heading p {
   margin: 0 0 22px;
+
   color: #7b8ba2;
   font-size: 12px;
 }
 
 .program-modules-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+
+  grid-template-columns: repeat(
+    3,
+    minmax(0, 1fr)
+  );
+
   gap: 18px;
 }
 
@@ -389,29 +571,43 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+
   min-height: 205px;
   padding: 24px;
-  font-family: inherit;
+
   text-align: left;
   cursor: pointer;
+
+  transition:
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .program-module-card:hover {
   border-color: var(--program-gold);
+
   transform: translateY(-2px);
+
+  box-shadow: 0 9px 25px rgba(16, 42, 76, 0.08);
 }
 
 .program-module-card strong {
   margin-top: 17px;
+
   color: var(--program-navy);
+
   font-size: 15px;
   font-weight: 800;
 }
 
 .program-module-card p {
   flex: 1;
+
   margin: 10px 0 17px;
+
   color: #7b8ba2;
+
   font-size: 12px;
   line-height: 1.7;
 }
@@ -420,27 +616,38 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
+
   color: #ad8127;
+
   font-size: 12px;
   font-weight: 800;
 }
+
+/* =========================================================
+   12. EMPTY MODULE
+========================================================= */
 
 .program-empty-panel {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+
   min-height: 410px;
   padding: 40px;
+
   text-align: center;
 }
 
 .program-empty-icon {
   display: grid;
   place-items: center;
+
   width: 76px;
   height: 76px;
+
   border-radius: 19px;
+
   background: #f8f0df;
   color: #b48727;
 }
@@ -452,7 +659,9 @@
 
 .program-empty-panel p {
   max-width: 500px;
+
   color: #7b8ba2;
+
   font-size: 13px;
   line-height: 1.8;
 }
@@ -462,6 +671,7 @@
   flex-wrap: wrap;
   justify-content: center;
   gap: 12px;
+
   margin: 20px 0 12px;
 }
 
@@ -469,10 +679,14 @@
   display: flex;
   align-items: center;
   gap: 8px;
+
   padding: 12px 16px;
+
   border: 1px solid #e3e8f0;
   border-radius: 10px;
+
   background: #f8fafc;
+
   font-size: 12px;
   font-weight: 700;
 }
@@ -485,135 +699,29 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
+
   margin-top: 13px;
   padding: 10px 13px;
+
   border-radius: 8px;
+
   background: #f5f7fa;
   color: #6c7b90;
+
   font-size: 11px;
   font-weight: 700;
 }
 
-.program-footer {
-  padding: 18px 36px;
-  border-top: 1px solid #e0e6ef;
-  color: #8c9aaf;
-  font-size: 11px;
-  text-align: center;
-}
-
-.program-menu-button,
-.program-sidebar-close {
-  display: none;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-}
-
-.program-sidebar-overlay {
-  display: none;
-}
-
-.program-modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  display: grid;
-  place-items: center;
-  padding: 20px;
-  background: rgba(12, 27, 47, 0.65);
-}
-
-.program-logout-modal {
-  width: min(100%, 450px);
-  padding: 32px;
-  border-radius: 17px;
-  background: #fff;
-  text-align: center;
-  box-shadow: 0 20px 70px rgba(0, 0, 0, 0.2);
-}
-
-.program-modal-icon {
-  display: grid;
-  place-items: center;
-  width: 65px;
-  height: 65px;
-  margin: 0 auto 20px;
-  border-radius: 18px;
-  background: #f8f0df;
-  color: #b48727;
-}
-
-.program-logout-modal h2 {
-  margin: 0 0 13px;
-  font-size: 22px;
-  font-weight: 800;
-}
-
-.program-logout-modal p {
-  margin: 0;
-  color: #6f7f94;
-  font-size: 13px;
-  line-height: 1.8;
-}
-
-.program-modal-notice {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 23px;
-  padding: 13px;
-  border-radius: 9px;
-  background: #fff8e9;
-  color: #946c27;
-  font-size: 12px;
-  text-align: left;
-}
-
-.program-modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 25px;
-}
-
-.program-modal-actions button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 42px;
-  padding: 11px 17px;
-  border-radius: 9px;
-  font-family: inherit;
-  font-size: 12px;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.program-modal-cancel {
-  border: 1px solid #dce4ee;
-  background: #fff;
-  color: var(--program-navy);
-}
-
-.program-modal-confirm {
-  border: 1px solid var(--program-navy);
-  background: var(--program-navy);
-  color: #fff;
-}
-
-.program-modal-actions button:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-/* PROFILE: Same two-card layout as Student Portal */
+/* =========================================================
+   13. PROGRAM OFFICE PROFILE
+========================================================= */
 
 .program-profile-layout {
   display: grid;
-  grid-template-columns: 300px minmax(0, 1fr);
+
+  grid-template-columns:
+    300px minmax(0, 1fr);
+
   align-items: start;
   gap: 22px;
 }
@@ -627,42 +735,56 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+
   text-align: center;
 }
 
 .program-profile-avatar-large {
   display: grid;
   place-items: center;
+
   width: 94px;
   height: 94px;
+
   margin: 10px 0 19px;
+
   border-radius: 50%;
+
   background: #edf2f8;
   color: #102a4c;
 }
 
 .program-profile-card h3 {
   margin: 0 0 8px;
+
   color: #102a4c;
+
   font-size: 18px;
   font-weight: 800;
+
   overflow-wrap: anywhere;
 }
 
 .program-profile-card > p {
   margin: 0;
+
   color: #7b8ba2;
   font-size: 12px;
 }
 
 .program-profile-label {
   display: block;
+
   width: 100%;
+
   margin-top: 24px;
   padding: 13px 12px;
+
   border-radius: 9px;
+
   background: #f5f8fc;
   color: #6c7b90;
+
   font-size: 11px;
   line-height: 1.7;
 }
@@ -672,20 +794,26 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
+
   padding-bottom: 19px;
+
   border-bottom: 1px solid #edf1f5;
 }
 
 .program-profile-panel-heading h3 {
   margin: 0 0 7px;
+
   color: #102a4c;
+
   font-size: 17px;
   font-weight: 800;
 }
 
 .program-profile-panel-heading p {
   margin: 0;
+
   color: #7b8ba2;
+
   font-size: 12px;
   line-height: 1.6;
 }
@@ -698,6 +826,7 @@
 .program-information-list {
   display: flex;
   flex-direction: column;
+
   margin-top: 6px;
 }
 
@@ -706,7 +835,9 @@
   align-items: center;
   justify-content: space-between;
   gap: 18px;
+
   padding: 17px 0;
+
   border-bottom: 1px solid #edf1f5;
 }
 
@@ -721,10 +852,13 @@
 
 .program-information-row strong {
   max-width: 65%;
+
   color: #102a4c;
+
   font-size: 12px;
   font-weight: 750;
   text-align: right;
+
   overflow-wrap: anywhere;
 }
 
@@ -732,11 +866,15 @@
   display: flex;
   align-items: flex-start;
   gap: 10px;
+
   margin-top: 20px;
   padding: 14px;
+
   border-radius: 9px;
+
   background: #f5f8fc;
   color: #65768d;
+
   font-size: 12px;
   line-height: 1.7;
 }
@@ -745,46 +883,577 @@
   flex-shrink: 0;
 }
 
-/* RESPONSIVE */
+/* =========================================================
+   14. STUDENT RECORDS / SUBJECT OFFERINGS / LOADS
+   LIST AND TABLE DESIGN
+
+   These selectors target standard tables rendered
+   inside the existing Program Office modules.
+========================================================= */
+
+.program-content table {
+  width: 100%;
+  min-width: 620px;
+
+  border-collapse: separate;
+  border-spacing: 0;
+
+  background: #ffffff;
+
+  color: #243a55;
+
+  font-size: 12px;
+  text-align: left;
+}
+
+.program-content table thead th {
+  padding: 15px 17px;
+
+  background: var(--program-navy);
+  color: #ffffff;
+
+  border-bottom: 3px solid var(--program-gold);
+
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.15px;
+
+  vertical-align: middle;
+}
+
+.program-content table thead th:first-child {
+  border-top-left-radius: 9px;
+}
+
+.program-content table thead th:last-child {
+  border-top-right-radius: 9px;
+}
+
+.program-content table tbody td {
+  padding: 15px 17px;
+
+  border-bottom: 1px solid #e9eef5;
+
+  color: #243a55;
+
+  font-size: 12px;
+  line-height: 1.6;
+
+  vertical-align: middle;
+}
+
+.program-content table tbody tr:nth-child(odd) > td {
+  background-color: #ffffff;
+}
+
+.program-content table tbody tr:nth-child(even) > td {
+  background-color: #f1f5f9;
+}
+
+.program-content table tbody tr:hover > td {
+  background-color: #e8f0fa;
+}
+
+.program-content table tbody tr > td {
+  transition: background-color 0.15s ease;
+}
+
+.program-content table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.program-content table tbody td:first-child {
+  font-weight: 700;
+}
+
+.program-content table tbody td strong {
+  color: #173b66;
+  font-weight: 800;
+}
+
+.program-content table td,
+.program-content table th {
+  overflow-wrap: anywhere;
+}
+
+/* Existing table wrappers, if present */
+
+.program-content .table-responsive,
+.program-content .table-wrapper,
+.program-content .table-container,
+.program-content .student-table-wrapper,
+.program-content .offerings-table-wrapper,
+.program-content .loads-table-wrapper {
+  width: 100%;
+  max-width: 100%;
+
+  overflow-x: auto;
+
+  border: 1px solid #e3eaf2;
+  border-radius: 11px;
+
+  background: #ffffff;
+}
+
+/* =========================================================
+   15. LIST PANELS
+========================================================= */
+
+.program-content .list-container,
+.program-content .records-container,
+.program-content .records-panel,
+.program-content .list-panel {
+  min-width: 0;
+
+  border: 1px solid #e3e8f0;
+  border-radius: 13px;
+
+  background: #ffffff;
+
+  box-shadow: 0 4px 18px rgba(16, 42, 76, 0.035);
+}
+
+.program-content .list-header,
+.program-content .records-header,
+.program-content .table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 15px;
+
+  padding: 18px 20px;
+
+  border-bottom: 1px solid #e5eaf1;
+}
+
+.program-content .list-header h2,
+.program-content .list-header h3,
+.program-content .records-header h2,
+.program-content .records-header h3,
+.program-content .table-header h2,
+.program-content .table-header h3 {
+  margin: 0;
+
+  color: var(--program-navy);
+
+  font-size: 17px;
+  font-weight: 800;
+}
+
+/* =========================================================
+   16. REFRESH BUTTON DESIGN
+
+   Applies to common Refresh class names.
+   Other button actions retain their own styles.
+========================================================= */
+
+.program-content .refresh-button,
+.program-content .refresh-btn,
+.program-content .btn-refresh,
+.program-content .program-refresh-button,
+.program-content button[aria-label="Refresh"],
+.program-content button[title="Refresh"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+
+  min-height: 40px;
+
+  padding: 10px 16px;
+
+  border: 1px solid var(--program-navy);
+  border-radius: 9px;
+
+  background: var(--program-navy);
+  color: #ffffff;
+
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.3;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.program-content .refresh-button:hover:not(:disabled),
+.program-content .refresh-btn:hover:not(:disabled),
+.program-content .btn-refresh:hover:not(:disabled),
+.program-content .program-refresh-button:hover:not(:disabled),
+.program-content button[aria-label="Refresh"]:hover:not(:disabled),
+.program-content button[title="Refresh"]:hover:not(:disabled) {
+  background: var(--program-navy-light);
+  border-color: var(--program-navy-light);
+
+  box-shadow: 0 4px 12px rgba(16, 42, 76, 0.12);
+}
+
+.program-content .refresh-button:disabled,
+.program-content .refresh-btn:disabled,
+.program-content .btn-refresh:disabled,
+.program-content .program-refresh-button:disabled,
+.program-content button[aria-label="Refresh"]:disabled,
+.program-content button[title="Refresh"]:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.program-content .refresh-button svg,
+.program-content .refresh-btn svg,
+.program-content .btn-refresh svg,
+.program-content .program-refresh-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* =========================================================
+   17. SEARCH AND FILTER CONTROLS
+========================================================= */
+
+.program-content input[type="search"],
+.program-content input[type="text"],
+.program-content select {
+  max-width: 100%;
+  min-height: 40px;
+
+  padding: 9px 12px;
+
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+
+  background: #ffffff;
+  color: #172b4d;
+
+  font-size: 12px;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.program-content input[type="search"]:focus,
+.program-content input[type="text"]:focus,
+.program-content select:focus {
+  border-color: var(--program-gold);
+  box-shadow: 0 0 0 3px rgba(214, 168, 73, 0.13);
+}
+
+.program-content input::placeholder {
+  color: #94a3b8;
+}
+
+.program-content select:disabled,
+.program-content input:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* =========================================================
+   18. FOOTER
+========================================================= */
+
+.program-footer {
+  padding: 18px 36px;
+
+  border-top: 1px solid #e0e6ef;
+
+  color: #8c9aaf;
+
+  font-size: 11px;
+  text-align: center;
+}
+
+/* =========================================================
+   19. SIDEBAR BUTTON DEFAULTS
+========================================================= */
+
+.program-menu-button,
+.program-sidebar-close {
+  display: none;
+
+  border: 0;
+  background: transparent;
+
+  color: inherit;
+
+  cursor: pointer;
+}
+
+.program-sidebar-overlay {
+  display: none;
+}
+
+/* =========================================================
+   20. LOGOUT MODAL
+========================================================= */
+
+.program-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+
+  display: grid;
+  place-items: center;
+
+  padding: 20px;
+
+  background: rgba(12, 27, 47, 0.65);
+}
+
+.program-logout-modal {
+  width: min(100%, 450px);
+
+  padding: 32px;
+
+  border-radius: 17px;
+
+  background: #ffffff;
+
+  text-align: center;
+
+  box-shadow: 0 20px 70px rgba(0, 0, 0, 0.2);
+}
+
+.program-modal-icon {
+  display: grid;
+  place-items: center;
+
+  width: 65px;
+  height: 65px;
+
+  margin: 0 auto 20px;
+
+  border-radius: 18px;
+
+  background: #f8f0df;
+  color: #b48727;
+}
+
+.program-logout-modal h2 {
+  margin: 0 0 13px;
+
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.program-logout-modal p {
+  margin: 0;
+
+  color: #6f7f94;
+
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.program-modal-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  margin-top: 23px;
+  padding: 13px;
+
+  border-radius: 9px;
+
+  background: #fff8e9;
+  color: #946c27;
+
+  font-size: 12px;
+  text-align: left;
+}
+
+.program-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+
+  margin-top: 25px;
+}
+
+.program-modal-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  min-height: 42px;
+
+  padding: 11px 17px;
+
+  border-radius: 9px;
+
+  font-size: 12px;
+  font-weight: 800;
+
+  cursor: pointer;
+}
+
+.program-modal-cancel {
+  border: 1px solid #dce4ee;
+  background: #ffffff;
+  color: var(--program-navy);
+}
+
+.program-modal-cancel:hover:not(:disabled) {
+  background: #f5f8fc;
+}
+
+.program-modal-confirm {
+  border: 1px solid var(--program-navy);
+  background: var(--program-navy);
+  color: #ffffff;
+}
+
+.program-modal-confirm:hover:not(:disabled) {
+  background: var(--program-navy-light);
+}
+
+.program-modal-actions button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* =========================================================
+   21. DESKTOP SIDEBAR TOGGLE
+========================================================= */
+
+.program-desktop-sidebar-toggle {
+  display: none;
+}
+
+@media (min-width: 801px) {
+  .program-desktop-sidebar-toggle {
+    display: grid;
+    place-items: center;
+
+    width: 40px;
+    height: 40px;
+
+    flex-shrink: 0;
+
+    border: 1px solid #e0e7f0;
+    border-radius: 9px;
+
+    background: #ffffff;
+    color: var(--program-navy);
+
+    cursor: pointer;
+
+    transition:
+      background-color 0.2s ease,
+      border-color 0.2s ease;
+  }
+
+  .program-desktop-sidebar-toggle:hover {
+    background: #edf2f8;
+    border-color: #cbd5e1;
+  }
+
+  .program-sidebar {
+    transition:
+      transform 0.25s ease,
+      visibility 0s linear 0s;
+  }
+
+  .program-main {
+    transition: margin-left 0.25s ease;
+  }
+
+  /* Sidebar hidden */
+  .program-layout-collapsed .program-sidebar {
+    transform: translateX(-100%);
+    visibility: hidden;
+    pointer-events: none;
+
+    transition:
+      transform 0.25s ease,
+      visibility 0s linear 0.25s;
+  }
+
+  /* Dashboard fills available space */
+  .program-layout-collapsed .program-main {
+    margin-left: 0;
+  }
+}
+
+/* =========================================================
+   22. RESPONSIVE LAPTOP
+========================================================= */
 
 @media (max-width: 1150px) {
   .program-stats-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(
+      2,
+      minmax(0, 1fr)
+    );
   }
 
   .program-modules-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(
+      2,
+      minmax(0, 1fr)
+    );
   }
 
   .program-profile-layout {
-    grid-template-columns: 260px minmax(0, 1fr);
+    grid-template-columns:
+      260px minmax(0, 1fr);
+  }
+
+  .program-content {
+    padding: 28px;
   }
 }
+
+/* =========================================================
+   23. RESPONSIVE TABLET
+========================================================= */
 
 @media (max-width: 900px) {
   .program-profile-layout {
     grid-template-columns: 1fr;
   }
+
+  .program-topbar {
+    padding-left: 22px;
+    padding-right: 22px;
+  }
 }
+
+/* =========================================================
+   24. MOBILE SIDEBAR
+========================================================= */
 
 @media (max-width: 800px) {
   .program-sidebar {
     width: 265px;
+
     transform: translateX(-100%);
     transition: transform 0.25s ease;
   }
 
   .program-sidebar-open {
     transform: translateX(0);
+    visibility: visible;
+    pointer-events: auto;
   }
 
   .program-sidebar-overlay {
     position: fixed;
     inset: 0;
     z-index: 25;
+
     display: block;
+
     width: 100%;
+
     border: 0;
+
     background: rgba(0, 0, 0, 0.45);
   }
 
@@ -797,10 +1466,33 @@
 
   .program-sidebar-close {
     margin-left: auto;
-    color: #fff;
+    padding: 6px;
+    color: #ffffff;
   }
 
-  .program-main {
+  .program-menu-button {
+    width: 40px;
+    height: 40px;
+
+    flex-shrink: 0;
+
+    border: 1px solid #e0e7f0;
+    border-radius: 9px;
+
+    background: #ffffff;
+    color: var(--program-navy);
+  }
+
+  .program-menu-button:hover {
+    background: #edf2f8;
+  }
+
+  .program-desktop-sidebar-toggle {
+    display: none;
+  }
+
+  .program-main,
+  .program-layout-collapsed .program-main {
     margin-left: 0;
   }
 
@@ -811,7 +1503,15 @@
   .program-content {
     padding: 24px 20px;
   }
+
+  .program-content table {
+    min-width: 620px;
+  }
 }
+
+/* =========================================================
+   25. SMALL MOBILE SCREENS
+========================================================= */
 
 @media (max-width: 520px) {
   .program-topbar-user-details {
@@ -858,11 +1558,45 @@
   .program-information-row strong {
     max-width: 55%;
   }
+
+  .program-content {
+    padding: 18px 14px 30px;
+  }
+
+  .program-topbar {
+    min-height: 75px;
+    padding: 15px;
+  }
+
+  .program-content .list-header,
+  .program-content .records-header,
+  .program-content .table-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .program-content .refresh-button,
+  .program-content .refresh-btn,
+  .program-content .btn-refresh,
+  .program-content .program-refresh-button {
+    justify-content: center;
+  }
 }
+
+/* =========================================================
+   26. ACCESSIBILITY
+========================================================= */
 
 @media (prefers-reduced-motion: reduce) {
   .program-sidebar,
-  .program-module-card {
+  .program-main,
+  .program-module-card,
+  .program-nav-item,
+  .program-content table tbody tr > td {
+    transition: none;
+  }
+
+  .program-layout-collapsed .program-sidebar {
     transition: none;
   }
 }
