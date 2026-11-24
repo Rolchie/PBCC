@@ -37,16 +37,34 @@ const ROLE_OPTIONS = [
 
 const STATUS_OPTIONS = ['active', 'inactive'];
 
+const YEAR_LEVEL_OPTIONS = [
+  { value: '1', label: '1st Year' },
+  { value: '2', label: '2nd Year' },
+  { value: '3', label: '3rd Year' },
+  { value: '4', label: '4th Year' },
+];
+
+const STUDENT_TYPE_OPTIONS = [
+  'Incoming',
+  'Continuing',
+  'Returning',
+  'Transferee',
+  'Shiftee',
+];
+
 const EMPTY_CREATE_FORM = {
   first_name: '',
   middle_name: '',
   last_name: '',
   email: '',
   role: 'Student',
+  year_level: '',
+  student_type: '',
 };
 
 function getErrorMessage(error) {
   return (
+    error?.response?.data?.message ||
     error?.message ||
     'Something went wrong. Please try again.'
   );
@@ -165,6 +183,10 @@ export default function UserManagement() {
     Number(selectedUser.user_id) ===
       Number(currentUser?.user_id);
 
+  const isCreatingStudent =
+    modalMode === 'create' &&
+    createForm.role === 'Student';
+
   function openCreateModal(event) {
     triggerRef.current = event?.currentTarget || null;
 
@@ -188,9 +210,7 @@ export default function UserManagement() {
     setModalMode('edit');
   }
 
-  function closeModal() {
-    if (saving) return;
-
+  const dismissModal = useCallback(() => {
     setModalMode(null);
     setSelectedUser(null);
     setModalError('');
@@ -198,12 +218,19 @@ export default function UserManagement() {
     requestAnimationFrame(() => {
       triggerRef.current?.focus();
     });
-  }
+  }, []);
+
+  const closeModal = useCallback(() => {
+    if (saving) return;
+
+    dismissModal();
+  }, [saving, dismissModal]);
 
   useEffect(() => {
     if (!modalMode) return;
 
     const previousOverflow = document.body.style.overflow;
+
     document.body.style.overflow = 'hidden';
 
     const frame = requestAnimationFrame(() => {
@@ -249,13 +276,15 @@ export default function UserManagement() {
 
     return () => {
       cancelAnimationFrame(frame);
+
       document.body.style.overflow = previousOverflow;
+
       document.removeEventListener(
         'keydown',
         handleKeyDown
       );
     };
-  }, [modalMode, saving]);
+  }, [modalMode, saving, closeModal]);
 
   async function handleCreate(event) {
     event.preventDefault();
@@ -274,12 +303,24 @@ export default function UserManagement() {
       return;
     }
 
+    if (
+      firstName.length > 100 ||
+      middleName.length > 100 ||
+      lastName.length > 100
+    ) {
+      setModalError(
+        'Each name must contain no more than 100 characters.'
+      );
+      return;
+    }
+
     if (!email) {
       setModalError('Email address is required.');
       return;
     }
 
     if (
+      email.length > 100 ||
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
     ) {
       setModalError(
@@ -293,25 +334,85 @@ export default function UserManagement() {
       return;
     }
 
+    // Validate student-specific fields.
+    if (createForm.role === 'Student') {
+      if (
+        !YEAR_LEVEL_OPTIONS.some(
+          (option) =>
+            option.value === createForm.year_level
+        )
+      ) {
+        setModalError(
+          'Please select a valid year level.'
+        );
+        return;
+      }
+
+      if (
+        !STUDENT_TYPE_OPTIONS.includes(
+          createForm.student_type
+        )
+      ) {
+        setModalError(
+          'Please select a valid student type.'
+        );
+        return;
+      }
+    }
+
+    const payload = {
+      first_name: firstName,
+      middle_name: middleName,
+      last_name: lastName,
+      email,
+      role: createForm.role,
+    };
+
+    // Academic fields are sent only for Student accounts.
+    if (createForm.role === 'Student') {
+      payload.year_level = Number(
+        createForm.year_level
+      );
+
+      payload.student_type = createForm.student_type;
+    }
+
     setSaving(true);
     setModalError('');
     setSuccess('');
 
     try {
-      await adminUsersApi.create({
-        first_name: firstName,
-        middle_name: middleName,
-        last_name: lastName,
-        email,
-        role: createForm.role,
-      });
+      const response = await adminUsersApi.create(
+        payload
+      );
 
-      setModalMode(null);
+      const student = response.data?.student;
+      const auditLogged = response.data?.auditLogged;
+
+      dismissModal();
+
       setCreateForm({ ...EMPTY_CREATE_FORM });
 
-      setSuccess(
-        'User account created successfully. The initial password is assigned automatically. The user must change it on first login.'
-      );
+      let successMessage;
+
+      if (payload.role === 'Student') {
+        successMessage = student?.student_no
+          ? `Student account created successfully. Student Number: ${student.student_no}. Program and curriculum will be assigned during enrollment.`
+          : 'Account created. Please verify the generated student profile.';
+      } else {
+        successMessage =
+          'User account created successfully.';
+      }
+
+      successMessage +=
+        ' The user must change the initial password on first login.';
+
+      if (auditLogged === false) {
+        successMessage +=
+          ' Warning: The audit log could not be saved.';
+      }
+
+      setSuccess(successMessage);
 
       await loadUsers();
     } catch (err) {
@@ -339,12 +440,23 @@ export default function UserManagement() {
       return;
     }
 
+    // Match the backend role-conversion restriction.
+    if (
+      selectedUser.role !== 'Student' &&
+      editForm.role === 'Student'
+    ) {
+      setModalError(
+        'Changing an existing account to Student requires a separate academic profile setup.'
+      );
+      return;
+    }
+
     setSaving(true);
     setModalError('');
     setSuccess('');
 
     try {
-      await adminUsersApi.update(
+      const response = await adminUsersApi.update(
         selectedUser.user_id,
         {
           role: editForm.role,
@@ -352,10 +464,10 @@ export default function UserManagement() {
         }
       );
 
-      setModalMode(null);
-      setSelectedUser(null);
+      dismissModal();
 
       setSuccess(
+        response.data?.message ||
         'User account updated successfully.'
       );
 
@@ -368,14 +480,32 @@ export default function UserManagement() {
   }
 
   function updateCreateField(field, value) {
-    setCreateForm((previous) => ({
-      ...previous,
-      [field]: value,
-    }));
+    setCreateForm((previous) => {
+      const next = {
+        ...previous,
+        [field]: value,
+      };
+
+      // Clear academic fields when switching roles.
+      if (
+        field === 'role' &&
+        value !== 'Student'
+      ) {
+        next.year_level = '';
+        next.student_type = '';
+      }
+
+      return next;
+    });
+
+    setModalError('');
   }
 
   return (
     <div className="pbcc-users-page">
+
+      {/* PAGE HEADING */}
+
       <section className="pbcc-users-heading">
         <div>
           <div className="pbcc-users-eyebrow">
@@ -401,6 +531,8 @@ export default function UserManagement() {
         </button>
       </section>
 
+      {/* ERROR NOTIFICATION */}
+
       {error && (
         <div
           className="pbcc-users-feedback is-error"
@@ -410,6 +542,8 @@ export default function UserManagement() {
           <span>{error}</span>
         </div>
       )}
+
+      {/* SUCCESS NOTIFICATION */}
 
       {success && (
         <div
@@ -429,6 +563,8 @@ export default function UserManagement() {
           </button>
         </div>
       )}
+
+      {/* ACCOUNT STATISTICS */}
 
       <section className="pbcc-users-stat-grid">
         <div className="pbcc-users-stat">
@@ -471,6 +607,8 @@ export default function UserManagement() {
         </div>
       </section>
 
+      {/* USER ACCOUNTS PANEL */}
+
       <section className="pbcc-users-panel">
         <div className="pbcc-users-panel-heading">
           <div>
@@ -506,6 +644,8 @@ export default function UserManagement() {
             </button>
           </div>
         </div>
+
+        {/* SEARCH AND FILTERS */}
 
         <div className="pbcc-users-filters">
           <label className="pbcc-users-search">
@@ -557,6 +697,8 @@ export default function UserManagement() {
           </label>
         </div>
 
+        {/* USERS TABLE */}
+
         <div className="pbcc-users-table-scroll">
           <table className="pbcc-users-table">
             <thead>
@@ -586,6 +728,7 @@ export default function UserManagement() {
                             {fullName ? (
                               <span>
                                 <strong>{fullName}</strong>
+
                                 <small
                                   style={{
                                     display: 'block',
@@ -597,7 +740,8 @@ export default function UserManagement() {
                                 </small>
                               </span>
                             ) : (
-                              user.username || 'Unnamed user'
+                              user.username ||
+                              'Unnamed user'
                             )}
                           </span>
                         </div>
@@ -687,6 +831,8 @@ export default function UserManagement() {
         </div>
       </section>
 
+      {/* CREATE AND EDIT ACCOUNT MODAL */}
+
       {modalMode && (
         <div className="pbcc-users-modal-overlay">
           <div
@@ -695,6 +841,10 @@ export default function UserManagement() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="pbcc-user-modal-title"
+            style={{
+              maxHeight: '90vh',
+              overflowY: 'auto',
+            }}
           >
             <div className="pbcc-users-modal-heading">
               <div>
@@ -744,10 +894,14 @@ export default function UserManagement() {
               }
             >
               <div className="pbcc-users-form">
+
+                {/* PERSONAL INFORMATION */}
+
                 {modalMode === 'create' && (
                   <>
                     <label>
                       First Name
+
                       <input
                         type="text"
                         value={createForm.first_name}
@@ -767,6 +921,7 @@ export default function UserManagement() {
 
                     <label>
                       Middle Name (Optional)
+
                       <input
                         type="text"
                         value={createForm.middle_name}
@@ -785,6 +940,7 @@ export default function UserManagement() {
 
                     <label>
                       Last Name
+
                       <input
                         type="text"
                         value={createForm.last_name}
@@ -804,6 +960,7 @@ export default function UserManagement() {
 
                     <label>
                       Email Address
+
                       <input
                         type="email"
                         value={createForm.email}
@@ -814,6 +971,7 @@ export default function UserManagement() {
                           )
                         }
                         placeholder="e.g., student@example.com"
+                        maxLength={100}
                         autoComplete="off"
                         disabled={saving}
                         required
@@ -821,6 +979,8 @@ export default function UserManagement() {
                     </label>
                   </>
                 )}
+
+                {/* USER ROLE */}
 
                 <label>
                   User Role
@@ -844,17 +1004,93 @@ export default function UserManagement() {
                       }
                     }}
                     disabled={saving || isEditingSelf}
+                    required
                   >
                     {ROLE_OPTIONS.map((role) => (
                       <option
                         key={role}
                         value={role}
+                        disabled={
+                          modalMode === 'edit' &&
+                          selectedUser?.role !== 'Student' &&
+                          role === 'Student'
+                        }
                       >
                         {role}
                       </option>
                     ))}
                   </select>
                 </label>
+
+                {/* STUDENT ACADEMIC INFORMATION */}
+
+                {isCreatingStudent && (
+                  <>
+                    <label>
+                      Year Level
+
+                      <select
+                        value={createForm.year_level}
+                        onChange={(event) =>
+                          updateCreateField(
+                            'year_level',
+                            event.target.value
+                          )
+                        }
+                        disabled={saving}
+                        required
+                      >
+                        <option value="">
+                          Select year level
+                        </option>
+
+                        {YEAR_LEVEL_OPTIONS.map(
+                          (option) => (
+                            <option
+                              key={option.value}
+                              value={option.value}
+                            >
+                              {option.label}
+                            </option>
+                          )
+                        )}
+                      </select>
+                    </label>
+
+                    <label>
+                      Student Type
+
+                      <select
+                        value={createForm.student_type}
+                        onChange={(event) =>
+                          updateCreateField(
+                            'student_type',
+                            event.target.value
+                          )
+                        }
+                        disabled={saving}
+                        required
+                      >
+                        <option value="">
+                          Select student type
+                        </option>
+
+                        {STUDENT_TYPE_OPTIONS.map(
+                          (type) => (
+                            <option
+                              key={type}
+                              value={type}
+                            >
+                              {type}
+                            </option>
+                          )
+                        )}
+                      </select>
+                    </label>
+                  </>
+                )}
+
+                {/* ACCOUNT STATUS — EDIT ONLY */}
 
                 {modalMode === 'edit' && (
                   <label>
@@ -885,6 +1121,23 @@ export default function UserManagement() {
                 )}
               </div>
 
+              {/* STUDENT INFORMATION NOTICE */}
+
+              {isCreatingStudent && (
+                <div className="pbcc-users-modal-notice">
+                  <Database size={18} />
+
+                  <span>
+                    A unique student number and student
+                    profile will be generated automatically.
+                    Program and curriculum will be assigned
+                    during the enrollment process.
+                  </span>
+                </div>
+              )}
+
+              {/* ACCOUNT SECURITY NOTICE */}
+
               <div className="pbcc-users-modal-notice">
                 <AlertCircle size={18} />
 
@@ -896,6 +1149,8 @@ export default function UserManagement() {
                       : 'Changes to account role or status affect the user’s system access.'}
                 </span>
               </div>
+
+              {/* MODAL ACTIONS */}
 
               <div className="pbcc-users-modal-actions">
                 <button

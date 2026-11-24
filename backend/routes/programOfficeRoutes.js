@@ -30,8 +30,29 @@ const STUDENT_COLUMNS = `
   status
 `;
 
+const UNASSIGNED_STUDENT_COLUMNS = `
+  student_id,
+  student_no,
+  first_name,
+  middle_name,
+  last_name,
+  program_id,
+  curriculum_id,
+  year_level,
+  student_type,
+  status
+`;
+
+// =====================================================
+// HELPER FUNCTIONS
+// =====================================================
+
 function parseId(value) {
-  if (value === null || value === undefined || value === '') {
+  if (
+    value === null ||
+    value === undefined ||
+    value === ''
+  ) {
     return null;
   }
 
@@ -66,10 +87,17 @@ async function getAssignedProgramIds(userId) {
     ...new Set(
       (data || [])
         .map((row) => Number(row.program_id))
-        .filter((id) => Number.isSafeInteger(id) && id > 0)
+        .filter(
+          (id) =>
+            Number.isSafeInteger(id) && id > 0
+        )
     )
   ];
 }
+
+// =====================================================
+// PROGRAM ACCESS MIDDLEWARE
+// =====================================================
 
 router.use(async (req, res, next) => {
   try {
@@ -85,9 +113,13 @@ router.use(async (req, res, next) => {
     }
 
     req.assignedProgramIds = programIds;
+
     next();
   } catch (error) {
-    console.error('Program assignment lookup error:', error);
+    console.error(
+      'Program assignment lookup error:',
+      error
+    );
 
     return res.status(500).json({
       message: 'Unable to verify your program access.'
@@ -95,7 +127,10 @@ router.use(async (req, res, next) => {
   }
 });
 
-async function findAuthorizedSection(sectionId, programIds) {
+async function findAuthorizedSection(
+  sectionId,
+  programIds
+) {
   const { data, error } = await supabase
     .from('sections')
     .select(
@@ -107,33 +142,97 @@ async function findAuthorizedSection(sectionId, programIds) {
   if (error) throw error;
 
   if (!data) {
-    return { section: null, reason: 'not_found' };
+    return {
+      section: null,
+      reason: 'not_found'
+    };
   }
 
   if (!programIds.includes(Number(data.program_id))) {
-    return { section: null, reason: 'forbidden' };
+    return {
+      section: null,
+      reason: 'forbidden'
+    };
   }
 
-  return { section: data, reason: null };
+  return {
+    section: data,
+    reason: null
+  };
 }
 
+// =====================================================
 // STUDENT RECORDS
+// =====================================================
+// Includes:
+// 1. Students assigned to authorized programs.
+// 2. Unassigned students awaiting enrollment.
+//
+// Unassigned students expose only the information
+// necessary for identification and enrollment.
+// =====================================================
+
 router.get('/students', async (req, res) => {
   try {
-    const { data, error } = await supabase
+    // Retrieve students assigned to the POP's programs.
+    const {
+      data: assignedStudents,
+      error: assignedError
+    } = await supabase
       .from('students')
       .select(STUDENT_COLUMNS)
       .in('program_id', req.assignedProgramIds)
       .order('student_id', { ascending: false });
 
-    if (error) throw error;
+    if (assignedError) throw assignedError;
+
+    // Retrieve newly created student accounts
+    // that have not yet been assigned a program.
+    const {
+      data: unassignedStudents,
+      error: unassignedError
+    } = await supabase
+      .from('students')
+      .select(UNASSIGNED_STUDENT_COLUMNS)
+      .is('program_id', null)
+      .eq('status', 'pending')
+      .order('student_id', { ascending: false });
+
+    if (unassignedError) throw unassignedError;
+
+    // Combine both groups and prevent duplicate results.
+    const studentMap = new Map();
+
+    for (const student of unassignedStudents || []) {
+      studentMap.set(
+        Number(student.student_id),
+        student
+      );
+    }
+
+    for (const student of assignedStudents || []) {
+      studentMap.set(
+        Number(student.student_id),
+        student
+      );
+    }
+
+    const students = Array.from(
+      studentMap.values()
+    ).sort(
+      (a, b) =>
+        Number(b.student_id) - Number(a.student_id)
+    );
 
     return res.json({
       message: 'Student records retrieved successfully.',
-      students: data || []
+      students
     });
   } catch (error) {
-    console.error('Fetch program students error:', error);
+    console.error(
+      'Fetch program students error:',
+      error
+    );
 
     return res.status(500).json({
       message: 'Failed to retrieve student records.'
@@ -141,7 +240,10 @@ router.get('/students', async (req, res) => {
   }
 });
 
+// =====================================================
 // ASSIGNED PROGRAMS
+// =====================================================
+
 router.get('/programs', async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -160,7 +262,10 @@ router.get('/programs', async (req, res) => {
       programs: data || []
     });
   } catch (error) {
-    console.error('Fetch assigned programs error:', error);
+    console.error(
+      'Fetch assigned programs error:',
+      error
+    );
 
     return res.status(500).json({
       message: 'Failed to retrieve programs.'
@@ -168,13 +273,18 @@ router.get('/programs', async (req, res) => {
   }
 });
 
+// =====================================================
 // ASSIGNED CURRICULA
+// =====================================================
+
 router.get('/curricula', async (req, res) => {
   try {
     let programIds = req.assignedProgramIds;
 
     if (req.query.program_id !== undefined) {
-      const programId = parseId(req.query.program_id);
+      const programId = parseId(
+        req.query.program_id
+      );
 
       if (!programId) {
         return res.status(400).json({
@@ -184,7 +294,8 @@ router.get('/curricula', async (req, res) => {
 
       if (!programIds.includes(programId)) {
         return res.status(403).json({
-          message: 'You are not assigned to this program.'
+          message:
+            'You are not assigned to this program.'
         });
       }
 
@@ -198,7 +309,10 @@ router.get('/curricula', async (req, res) => {
       )
       .in('program_id', programIds)
       .eq('status', 'active')
-      .order('curriculum_year', { ascending: false });
+      .order(
+        'curriculum_year',
+        { ascending: false }
+      );
 
     if (error) throw error;
 
@@ -207,7 +321,10 @@ router.get('/curricula', async (req, res) => {
       curricula: data || []
     });
   } catch (error) {
-    console.error('Fetch assigned curricula error:', error);
+    console.error(
+      'Fetch assigned curricula error:',
+      error
+    );
 
     return res.status(500).json({
       message: 'Failed to retrieve curricula.'
@@ -215,10 +332,15 @@ router.get('/curricula', async (req, res) => {
   }
 });
 
+// =====================================================
 // APPROVED CURRICULUM SUBJECTS
+// =====================================================
+
 router.get('/curriculum-subjects', async (req, res) => {
   try {
-    const curriculumId = parseId(req.query.curriculum_id);
+    const curriculumId = parseId(
+      req.query.curriculum_id
+    );
 
     if (!curriculumId) {
       return res.status(400).json({
@@ -241,7 +363,8 @@ router.get('/curriculum-subjects', async (req, res) => {
 
     if (
       !curriculum ||
-      String(curriculum.status).toLowerCase() !== 'active'
+      String(curriculum.status).toLowerCase() !==
+        'active'
     ) {
       return res.status(404).json({
         message: 'Active curriculum not found.'
@@ -254,11 +377,15 @@ router.get('/curriculum-subjects', async (req, res) => {
       )
     ) {
       return res.status(403).json({
-        message: 'You are not authorized to view this curriculum.'
+        message:
+          'You are not authorized to view this curriculum.'
       });
     }
 
-    const { data: links, error: linksError } = await supabase
+    const {
+      data: links,
+      error: linksError
+    } = await supabase
       .from('curriculum_subjects')
       .select(
         'curriculum_id, subject_id, year_level, semester, is_required'
@@ -270,25 +397,30 @@ router.get('/curriculum-subjects', async (req, res) => {
 
     const subjectIds = [
       ...new Set(
-        (links || []).map((link) => Number(link.subject_id))
+        (links || []).map(
+          (link) => Number(link.subject_id)
+        )
       )
     ];
 
     if (!subjectIds.length) {
       return res.json({
-        message: 'No subjects are linked to this curriculum.',
+        message:
+          'No subjects are linked to this curriculum.',
         curriculum,
         subjects: []
       });
     }
 
-    const { data: subjects, error: subjectsError } =
-      await supabase
-        .from('subjects')
-        .select(
-          'subject_id, subject_code, subject_title, units, status'
-        )
-        .in('subject_id', subjectIds);
+    const {
+      data: subjects,
+      error: subjectsError
+    } = await supabase
+      .from('subjects')
+      .select(
+        'subject_id, subject_code, subject_title, units, status'
+      )
+      .in('subject_id', subjectIds);
 
     if (subjectsError) throw subjectsError;
 
@@ -309,8 +441,10 @@ router.get('/curriculum-subjects', async (req, res) => {
 
         return {
           ...link,
+
           curriculum_subject_id:
             `${link.curriculum_id}-${link.subject_id}-${link.year_level}-${link.semester}`,
+
           subject_code: subject.subject_code,
           subject_title: subject.subject_title,
           units: subject.units,
@@ -320,9 +454,12 @@ router.get('/curriculum-subjects', async (req, res) => {
       .filter(Boolean)
       .sort((a, b) => {
         const yearDifference =
-          Number(a.year_level) - Number(b.year_level);
+          Number(a.year_level) -
+          Number(b.year_level);
 
-        if (yearDifference !== 0) return yearDifference;
+        if (yearDifference !== 0) {
+          return yearDifference;
+        }
 
         const order = {
           'first semester': 1,
@@ -334,7 +471,9 @@ router.get('/curriculum-subjects', async (req, res) => {
           (order[normalizeTerm(a.semester)] || 99) -
           (order[normalizeTerm(b.semester)] || 99);
 
-        if (termDifference !== 0) return termDifference;
+        if (termDifference !== 0) {
+          return termDifference;
+        }
 
         return String(a.subject_code).localeCompare(
           String(b.subject_code)
@@ -348,15 +487,22 @@ router.get('/curriculum-subjects', async (req, res) => {
       subjects: records
     });
   } catch (error) {
-    console.error('Fetch curriculum subjects error:', error);
+    console.error(
+      'Fetch curriculum subjects error:',
+      error
+    );
 
     return res.status(500).json({
-      message: 'Failed to retrieve curriculum subjects.'
+      message:
+        'Failed to retrieve curriculum subjects.'
     });
   }
 });
 
+// =====================================================
 // ACADEMIC PERIODS
+// =====================================================
+
 router.get('/academic-periods', async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -364,7 +510,10 @@ router.get('/academic-periods', async (req, res) => {
       .select(
         'period_id, school_year, semester, start_date, end_date, status'
       )
-      .order('school_year', { ascending: false });
+      .order(
+        'school_year',
+        { ascending: false }
+      );
 
     if (error) throw error;
 
@@ -389,7 +538,10 @@ router.get('/academic-periods', async (req, res) => {
 
     return res.json({ periods });
   } catch (error) {
-    console.error('Fetch academic periods error:', error);
+    console.error(
+      'Fetch academic periods error:',
+      error
+    );
 
     return res.status(500).json({
       message: 'Failed to retrieve academic periods.'
@@ -397,7 +549,10 @@ router.get('/academic-periods', async (req, res) => {
   }
 });
 
+// =====================================================
 // VIEW SECTIONS
+// =====================================================
+
 router.get('/sections', async (req, res) => {
   try {
     let query = supabase
@@ -408,7 +563,9 @@ router.get('/sections', async (req, res) => {
       .in('program_id', req.assignedProgramIds);
 
     if (req.query.period_id !== undefined) {
-      const periodId = parseId(req.query.period_id);
+      const periodId = parseId(
+        req.query.period_id
+      );
 
       if (!periodId) {
         return res.status(400).json({
@@ -428,7 +585,8 @@ router.get('/sections', async (req, res) => {
 
     const sections = (data || []).sort(
       (a, b) =>
-        Number(a.year_level) - Number(b.year_level) ||
+        Number(a.year_level) -
+          Number(b.year_level) ||
         String(a.section_code).localeCompare(
           String(b.section_code),
           undefined,
@@ -438,7 +596,10 @@ router.get('/sections', async (req, res) => {
 
     return res.json({ sections });
   } catch (error) {
-    console.error('Fetch sections error:', error);
+    console.error(
+      'Fetch sections error:',
+      error
+    );
 
     return res.status(500).json({
       message: 'Failed to retrieve sections.'
@@ -446,24 +607,41 @@ router.get('/sections', async (req, res) => {
   }
 });
 
+// =====================================================
 // CREATE SECTION
+// =====================================================
+
 router.post('/sections', async (req, res) => {
   try {
-    const programId = parseId(req.body?.program_id);
-    const periodId = parseId(req.body?.period_id);
-    const yearLevel = parseId(req.body?.year_level);
-    const capacity = parseId(req.body?.capacity);
+    const programId = parseId(
+      req.body?.program_id
+    );
+
+    const periodId = parseId(
+      req.body?.period_id
+    );
+
+    const yearLevel = parseId(
+      req.body?.year_level
+    );
+
+    const capacity = parseId(
+      req.body?.capacity
+    );
 
     const letter = String(
       req.body?.section_letter || ''
-    ).trim().toUpperCase();
+    )
+      .trim()
+      .toUpperCase();
 
     if (
       !programId ||
       !req.assignedProgramIds.includes(programId)
     ) {
       return res.status(403).json({
-        message: 'You are not assigned to this program.'
+        message:
+          'You are not assigned to this program.'
       });
     }
 
@@ -481,36 +659,44 @@ router.post('/sections', async (req, res) => {
       });
     }
 
-    const { data: program, error: programError } =
-      await supabase
-        .from('programs')
-        .select('program_id, program_code, status')
-        .eq('program_id', programId)
-        .maybeSingle();
+    const {
+      data: program,
+      error: programError
+    } = await supabase
+      .from('programs')
+      .select(
+        'program_id, program_code, status'
+      )
+      .eq('program_id', programId)
+      .maybeSingle();
 
     if (programError) throw programError;
 
     if (
       !program ||
-      String(program.status).toLowerCase() !== 'active'
+      String(program.status).toLowerCase() !==
+        'active'
     ) {
       return res.status(400).json({
         message: 'The selected program is not active.'
       });
     }
 
-    const { data: period, error: periodError } =
-      await supabase
-        .from('academic_periods')
-        .select('period_id, status')
-        .eq('period_id', periodId)
-        .maybeSingle();
+    const {
+      data: period,
+      error: periodError
+    } = await supabase
+      .from('academic_periods')
+      .select('period_id, status')
+      .eq('period_id', periodId)
+      .maybeSingle();
 
     if (periodError) throw periodError;
 
     if (
       !period ||
-      String(period.status).toLowerCase() !== 'active'
+      String(period.status).toLowerCase() !==
+        'active'
     ) {
       return res.status(400).json({
         message: 'Choose an active academic period.'
@@ -519,7 +705,9 @@ router.post('/sections', async (req, res) => {
 
     const programCode = String(
       program.program_code || ''
-    ).trim().toUpperCase();
+    )
+      .trim()
+      .toUpperCase();
 
     if (!/^[A-Z0-9-]+$/.test(programCode)) {
       return res.status(400).json({
@@ -530,14 +718,16 @@ router.post('/sections', async (req, res) => {
     const sectionCode =
       `${programCode} ${yearLevel}-${letter}`;
 
-    const { data: existing, error: existingError } =
-      await supabase
-        .from('sections')
-        .select('section_id')
-        .eq('program_id', programId)
-        .eq('period_id', periodId)
-        .eq('section_code', sectionCode)
-        .limit(1);
+    const {
+      data: existing,
+      error: existingError
+    } = await supabase
+      .from('sections')
+      .select('section_id')
+      .eq('program_id', programId)
+      .eq('period_id', periodId)
+      .eq('section_code', sectionCode)
+      .limit(1);
 
     if (existingError) throw existingError;
 
@@ -548,21 +738,23 @@ router.post('/sections', async (req, res) => {
       });
     }
 
-    const { data: section, error: insertError } =
-      await supabase
-        .from('sections')
-        .insert({
-          section_code: sectionCode,
-          program_id: programId,
-          year_level: yearLevel,
-          period_id: periodId,
-          capacity,
-          status: 'active'
-        })
-        .select(
-          'section_id, section_code, program_id, year_level, period_id, capacity, status'
-        )
-        .single();
+    const {
+      data: section,
+      error: insertError
+    } = await supabase
+      .from('sections')
+      .insert({
+        section_code: sectionCode,
+        program_id: programId,
+        year_level: yearLevel,
+        period_id: periodId,
+        capacity,
+        status: 'active'
+      })
+      .select(
+        'section_id, section_code, program_id, year_level, period_id, capacity, status'
+      )
+      .single();
 
     if (insertError) {
       if (insertError.code === '23505') {
@@ -575,11 +767,15 @@ router.post('/sections', async (req, res) => {
     }
 
     return res.status(201).json({
-      message: `${sectionCode} created successfully.`,
+      message:
+        `${sectionCode} created successfully.`,
       section
     });
   } catch (error) {
-    console.error('Create section error:', error);
+    console.error(
+      'Create section error:',
+      error
+    );
 
     return res.status(500).json({
       message: 'Failed to create section.'
@@ -587,10 +783,15 @@ router.post('/sections', async (req, res) => {
   }
 });
 
+// =====================================================
 // VIEW SUBJECT LOADS FOR A SECTION
+// =====================================================
+
 router.get('/subject-loads', async (req, res) => {
   try {
-    const sectionId = parseId(req.query.section_id);
+    const sectionId = parseId(
+      req.query.section_id
+    );
 
     if (!sectionId) {
       return res.status(400).json({
@@ -615,22 +816,27 @@ router.get('/subject-loads', async (req, res) => {
       });
     }
 
-    const { data: offerings, error: offeringError } =
-      await supabase
-        .from('subject_offerings')
-        .select(
-          'offering_id, subject_id, section_id, period_id, faculty_id, schedule, room, max_slots, status'
-        )
-        .eq('section_id', sectionId)
-        .eq('period_id', section.period_id)
-        .order('offering_id', { ascending: true });
+    const {
+      data: offerings,
+      error: offeringError
+    } = await supabase
+      .from('subject_offerings')
+      .select(
+        'offering_id, subject_id, section_id, period_id, faculty_id, schedule, room, max_slots, status'
+      )
+      .eq('section_id', sectionId)
+      .eq('period_id', section.period_id)
+      .order(
+        'offering_id',
+        { ascending: true }
+      );
 
     if (offeringError) throw offeringError;
 
     const subjectIds = [
       ...new Set(
-        (offerings || []).map((row) =>
-          Number(row.subject_id)
+        (offerings || []).map(
+          (row) => Number(row.subject_id)
         )
       )
     ];
@@ -646,6 +852,7 @@ router.get('/subject-loads', async (req, res) => {
         .in('subject_id', subjectIds);
 
       if (result.error) throw result.error;
+
       subjects = result.data || [];
     }
 
@@ -656,20 +863,28 @@ router.get('/subject-loads', async (req, res) => {
       ])
     );
 
-    const records = (offerings || []).map((offering) => ({
-      ...offering,
-      subject:
-        subjectMap.get(Number(offering.subject_id)) ||
-        null
-    }));
+    const records = (offerings || []).map(
+      (offering) => ({
+        ...offering,
+
+        subject:
+          subjectMap.get(
+            Number(offering.subject_id)
+          ) || null
+      })
+    );
 
     return res.json({
-      message: 'Subject loads retrieved successfully.',
+      message:
+        'Subject loads retrieved successfully.',
       section,
       offerings: records
     });
   } catch (error) {
-    console.error('Fetch subject loads error:', error);
+    console.error(
+      'Fetch subject loads error:',
+      error
+    );
 
     return res.status(500).json({
       message: 'Failed to retrieve subject loads.'
@@ -677,10 +892,16 @@ router.get('/subject-loads', async (req, res) => {
   }
 });
 
+// =====================================================
 // ASSIGN APPROVED SUBJECTS TO A SECTION
+// =====================================================
+
 router.post('/subject-loads', async (req, res) => {
   try {
-    const sectionId = parseId(req.body?.section_id);
+    const sectionId = parseId(
+      req.body?.section_id
+    );
+
     const rawIds = req.body?.subject_ids;
 
     if (
@@ -724,18 +945,25 @@ router.post('/subject-loads', async (req, res) => {
       });
     }
 
-    if (normalizeTerm(section.status) !== 'active') {
+    if (
+      normalizeTerm(section.status) !== 'active'
+    ) {
       return res.status(400).json({
-        message: 'Only active sections can receive subjects.'
+        message:
+          'Only active sections can receive subjects.'
       });
     }
 
-    const { data: period, error: periodError } =
-      await supabase
-        .from('academic_periods')
-        .select('period_id, semester, status')
-        .eq('period_id', section.period_id)
-        .maybeSingle();
+    const {
+      data: period,
+      error: periodError
+    } = await supabase
+      .from('academic_periods')
+      .select(
+        'period_id, semester, status'
+      )
+      .eq('period_id', section.period_id)
+      .maybeSingle();
 
     if (periodError) throw periodError;
 
@@ -748,12 +976,14 @@ router.post('/subject-loads', async (req, res) => {
       });
     }
 
-    const { data: curricula, error: curriculaError } =
-      await supabase
-        .from('curricula')
-        .select('curriculum_id')
-        .eq('program_id', section.program_id)
-        .eq('status', 'active');
+    const {
+      data: curricula,
+      error: curriculaError
+    } = await supabase
+      .from('curricula')
+      .select('curriculum_id')
+      .eq('program_id', section.program_id)
+      .eq('status', 'active');
 
     if (curriculaError) throw curriculaError;
 
@@ -768,24 +998,31 @@ router.post('/subject-loads', async (req, res) => {
       });
     }
 
-    const { data: links, error: linksError } =
-      await supabase
-        .from('curriculum_subjects')
-        .select(
-          'subject_id, year_level, semester'
-        )
-        .in('curriculum_id', curriculumIds)
-        .in('subject_id', subjectIds)
-        .eq('year_level', section.year_level);
+    const {
+      data: links,
+      error: linksError
+    } = await supabase
+      .from('curriculum_subjects')
+      .select(
+        'subject_id, year_level, semester'
+      )
+      .in('curriculum_id', curriculumIds)
+      .in('subject_id', subjectIds)
+      .eq('year_level', section.year_level);
 
     if (linksError) throw linksError;
 
     const allowedIds = new Set(
       (links || [])
         .filter((link) =>
-          sameTerm(link.semester, period.semester)
+          sameTerm(
+            link.semester,
+            period.semester
+          )
         )
-        .map((link) => Number(link.subject_id))
+        .map(
+          (link) => Number(link.subject_id)
+        )
     );
 
     const invalidIds = subjectIds.filter(
@@ -799,11 +1036,13 @@ router.post('/subject-loads', async (req, res) => {
       });
     }
 
-    const { data: subjectRecords, error: subjectError } =
-      await supabase
-        .from('subjects')
-        .select('subject_id, status')
-        .in('subject_id', subjectIds);
+    const {
+      data: subjectRecords,
+      error: subjectError
+    } = await supabase
+      .from('subjects')
+      .select('subject_id, status')
+      .in('subject_id', subjectIds);
 
     if (subjectError) throw subjectError;
 
@@ -811,9 +1050,12 @@ router.post('/subject-loads', async (req, res) => {
       (subjectRecords || [])
         .filter(
           (subject) =>
-            normalizeTerm(subject.status) === 'active'
+            normalizeTerm(subject.status) ===
+            'active'
         )
-        .map((subject) => Number(subject.subject_id))
+        .map(
+          (subject) => Number(subject.subject_id)
+        )
     );
 
     if (
@@ -827,13 +1069,15 @@ router.post('/subject-loads', async (req, res) => {
       });
     }
 
-    const { data: existing, error: existingError } =
-      await supabase
-        .from('subject_offerings')
-        .select('subject_id')
-        .eq('section_id', sectionId)
-        .eq('period_id', section.period_id)
-        .in('subject_id', subjectIds);
+    const {
+      data: existing,
+      error: existingError
+    } = await supabase
+      .from('subject_offerings')
+      .select('subject_id')
+      .eq('section_id', sectionId)
+      .eq('period_id', section.period_id)
+      .in('subject_id', subjectIds);
 
     if (existingError) throw existingError;
 
@@ -846,27 +1090,33 @@ router.post('/subject-loads', async (req, res) => {
 
     const slots = Number(section.capacity);
 
-    const records = subjectIds.map((subjectId) => ({
-      subject_id: subjectId,
-      section_id: sectionId,
-      period_id: section.period_id,
-      faculty_id: null,
-      schedule: null,
-      room: null,
-      max_slots:
-        Number.isSafeInteger(slots) && slots > 0
-          ? slots
-          : null,
-      status: 'active'
-    }));
+    const records = subjectIds.map(
+      (subjectId) => ({
+        subject_id: subjectId,
+        section_id: sectionId,
+        period_id: section.period_id,
+        faculty_id: null,
+        schedule: null,
+        room: null,
 
-    const { data: inserted, error: insertError } =
-      await supabase
-        .from('subject_offerings')
-        .insert(records)
-        .select(
-          'offering_id, subject_id, section_id, period_id, faculty_id, schedule, room, max_slots, status'
-        );
+        max_slots:
+          Number.isSafeInteger(slots) && slots > 0
+            ? slots
+            : null,
+
+        status: 'active'
+      })
+    );
+
+    const {
+      data: inserted,
+      error: insertError
+    } = await supabase
+      .from('subject_offerings')
+      .insert(records)
+      .select(
+        'offering_id, subject_id, section_id, period_id, faculty_id, schedule, room, max_slots, status'
+      );
 
     if (insertError) {
       if (insertError.code === '23505') {
@@ -882,19 +1132,33 @@ router.post('/subject-loads', async (req, res) => {
     return res.status(201).json({
       message:
         `${inserted?.length || records.length} subject(s) assigned successfully to ${section.section_code}.`,
+
       offerings: inserted || []
     });
   } catch (error) {
-    console.error('Assign subject loads error:', error);
+    console.error(
+      'Assign subject loads error:',
+      error
+    );
 
     return res.status(500).json({
-      message: 'Failed to assign subjects to section.'
+      message:
+        'Failed to assign subjects to section.'
     });
   }
 });
+
+// =====================================================
+// STUDENT ENROLLMENT AND LOAD PREPARATION ROUTES
+// =====================================================
+
+router.use(require('./studentLoadRoutes'));
+
+// =====================================================
+// EXPORT ROUTER
+// =====================================================
 
 // Registrar controls official student records.
 // Program Office Personnel cannot create students here.
 
 module.exports = router;
-router.use(require('./studentLoadRoutes'));

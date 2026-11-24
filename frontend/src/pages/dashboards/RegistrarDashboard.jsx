@@ -1,4 +1,3 @@
-
 import {
   useCallback,
   useContext,
@@ -32,12 +31,17 @@ import {
   AlertCircle,
   Eye,
   ChevronDown,
-  BookOpen
+  BookOpen,
+  PanelLeftClose
 } from 'lucide-react';
 
 import { AuthContext } from '../../context/auth-context';
 import api from '../../Services/api';
 import './RegistrarDashboard.css';
+
+// ======================================================
+// NAVIGATION
+// ======================================================
 
 const navigation = [
   {
@@ -80,6 +84,10 @@ const descriptions = {
     'View registrar personnel account information.'
 };
 
+// ======================================================
+// DESIGN CONSTANTS
+// ======================================================
+
 const NAVY = '#102a4c';
 const GOLD = '#b48727';
 const MUTED = '#64748b';
@@ -107,20 +115,98 @@ const primaryButton = {
   color: '#fff'
 };
 
+const selectStyle = {
+  width: '100%',
+  padding: '11px 12px',
+  border: `1px solid ${BORDER}`,
+  borderRadius: 8,
+  background: '#fff',
+  color: NAVY,
+  fontSize: 13,
+  outline: 'none'
+};
+
+const secondaryText = {
+  display: 'block',
+  marginTop: 4,
+  fontSize: 11,
+  color: MUTED,
+  lineHeight: 1.5
+};
+
+const pendingText = {
+  display: 'block',
+  marginTop: 5,
+  color: GOLD,
+  fontSize: 11,
+  fontWeight: 700
+};
+
+// ======================================================
+// HELPERS
+// ======================================================
+
 function errorMessage(error) {
   return (
-    error.response?.data?.message ||
-    error.message ||
+    error?.response?.data?.message ||
+    error?.raw?.response?.data?.message ||
+    error?.message ||
     'Something went wrong.'
   );
 }
 
 function normalize(value) {
-  return String(value || '').trim().toLowerCase();
+  return String(value ?? '')
+    .trim()
+    .toLowerCase();
 }
 
+function formatYearLevel(value) {
+  const year = Number(value);
+
+  if (!Number.isInteger(year) || year < 1) {
+    return 'Not recorded';
+  }
+
+  const labels = {
+    1: '1st Year',
+    2: '2nd Year',
+    3: '3rd Year',
+    4: '4th Year'
+  };
+
+  return labels[year] || `Year ${year}`;
+}
+
+function curriculumLabel(curriculum) {
+  if (!curriculum) {
+    return 'Not assigned';
+  }
+
+  return (
+    [
+      curriculum.curriculum_year,
+      curriculum.description
+    ]
+      .filter(Boolean)
+      .join(' — ') ||
+    `Curriculum ${curriculum.curriculum_id}`
+  );
+}
+
+// ======================================================
+// STATUS BADGE
+// ======================================================
+
 function StatusBadge({ status }) {
-  const approved = normalize(status) === 'enrolled';
+  const value = normalize(status);
+
+  const approved = [
+    'enrolled',
+    'active'
+  ].includes(value);
+
+  const pending = value === 'pending';
 
   return (
     <span
@@ -128,17 +214,30 @@ function StatusBadge({ status }) {
         display: 'inline-block',
         padding: '5px 10px',
         borderRadius: 20,
-        background: approved ? '#e9f7ee' : '#fff5df',
-        color: approved ? '#176534' : '#936000',
+        background: approved
+          ? '#e9f7ee'
+          : pending
+            ? '#fff5df'
+            : '#eef2f7',
+        color: approved
+          ? '#176534'
+          : pending
+            ? '#936000'
+            : MUTED,
         fontSize: 11,
         fontWeight: 700,
-        textTransform: 'capitalize'
+        textTransform: 'capitalize',
+        whiteSpace: 'nowrap'
       }}
     >
       {status || 'Unknown'}
     </span>
   );
 }
+
+// ======================================================
+// REUSABLE COMPONENTS
+// ======================================================
 
 function OverviewCard({
   icon: Icon,
@@ -167,6 +266,20 @@ function InformationRow({ label, value }) {
     <div className="registrar-information-row">
       <span>{label}</span>
       <strong>{value}</strong>
+    </div>
+  );
+}
+
+function EnrollmentDetailItem({ label, children }) {
+  return (
+    <div className="registrar-enrollment-detail-item">
+      <span className="registrar-enrollment-detail-label">
+        {label}
+      </span>
+
+      <div className="registrar-enrollment-detail-value">
+        {children}
+      </div>
     </div>
   );
 }
@@ -201,16 +314,24 @@ function Notice({ type, children, onClose }) {
         marginBottom: 17,
         padding: 14,
         borderRadius: 9,
-        background: success ? '#edf8f0' : '#fff1f0',
-        color: success ? '#176534' : '#a52727',
+        background: success
+          ? '#edf8f0'
+          : '#fff1f0',
+        color: success
+          ? '#176534'
+          : '#a52727',
         fontSize: 12
       }}
     >
-      {success
-        ? <CheckCircle2 size={18} />
-        : <AlertCircle size={18} />}
+      {success ? (
+        <CheckCircle2 size={18} />
+      ) : (
+        <AlertCircle size={18} />
+      )}
 
-      <span style={{ flex: 1 }}>{children}</span>
+      <span style={{ flex: 1 }}>
+        {children}
+      </span>
 
       {onClose && (
         <button
@@ -231,103 +352,162 @@ function Notice({ type, children, onClose }) {
   );
 }
 
-function SubjectDetails({ group }) {
+function PanelHeading({
+  title,
+  description,
+  icon: Icon
+}) {
   return (
-    <div
-      style={{
-        padding: '16px 18px',
-        background: '#f6f8fc',
-        border: `1px solid ${BORDER}`,
-        borderRadius: 10,
-        margin: '8px 0 14px'
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: 12,
-          marginBottom: 15
-        }}
+    <div className="registrar-panel-heading">
+      <div>
+        <h3>{title}</h3>
+        <p>{description}</p>
+      </div>
+
+      {Icon && <Icon size={22} />}
+    </div>
+  );
+}
+
+function SearchToolbar({
+  searchTerm,
+  onSearch,
+  placeholder,
+  label,
+  onRefresh,
+  disabled
+}) {
+  return (
+    <div className="registrar-toolbar">
+      <div className="registrar-search-field">
+        <Search size={18} />
+
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={event =>
+            onSearch(event.target.value)
+          }
+          placeholder={placeholder}
+          aria-label={label}
+        />
+      </div>
+
+      <button
+        type="button"
+        onClick={onRefresh}
+        disabled={disabled}
+        style={smallButton}
       >
+        <RefreshCw size={15} />
+        Refresh
+      </button>
+    </div>
+  );
+}
+
+// ======================================================
+// EXPANDED ENROLLMENT SUBJECT DETAILS
+// ======================================================
+
+function SubjectDetails({ group }) {
+  const isPending =
+    normalize(group.status) === 'pending';
+
+  const yearLevel = formatYearLevel(
+    group.section_year_level ??
+    group.year_level
+  );
+
+  return (
+    <div className="registrar-enrollment-details">
+
+      {/* STUDENT INFORMATION HEADER */}
+
+      <div className="registrar-enrollment-details-header">
         <div>
-          <strong
-            style={{
-              display: 'block',
-              color: NAVY,
-              fontSize: 14
-            }}
-          >
+          <strong className="registrar-enrollment-student-name">
             {group.student_name}
           </strong>
 
-          <span
-            style={{
-              display: 'block',
-              marginTop: 5,
-              fontSize: 12,
-              color: MUTED
-            }}
-          >
+          <span className="registrar-enrollment-student-meta">
             {group.student_no}
             {' · '}
             {group.program_code}
             {' · '}
-            Year {group.year_level}
+            {yearLevel}
           </span>
         </div>
 
-        <div style={{ textAlign: 'right' }}>
-          <strong style={{ fontSize: 13, color: NAVY }}>
+        <div className="registrar-enrollment-summary">
+          <strong>
             {group.subject_count} subjects
           </strong>
 
-          <div
-            style={{
-              marginTop: 5,
-              fontSize: 12,
-              color: MUTED
-            }}
-          >
+          <span>
             {group.total_units} total units
-          </div>
+          </span>
         </div>
       </div>
 
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: 15,
-          marginBottom: 13,
-          fontSize: 12,
-          color: NAVY
-        }}
-      >
-        <span>
-          <strong>Period:</strong>{' '}
-          {group.school_year} — {group.semester}
-        </span>
+      {/* THREE-COLUMN INFORMATION GRID */}
 
-        <span>
-          <strong>Section:</strong>{' '}
-          {group.section_code}
-        </span>
+      <div className="registrar-enrollment-information">
+        <div className="registrar-enrollment-details-grid">
 
-        <span>
-          <strong>Status:</strong>{' '}
-          <StatusBadge status={group.status} />
-        </span>
+          <EnrollmentDetailItem label="Academic Period">
+            {group.school_year || 'Not recorded'}
+
+            <span className="registrar-enrollment-detail-secondary">
+              {group.semester || 'Not recorded'}
+            </span>
+          </EnrollmentDetailItem>
+
+          <EnrollmentDetailItem label="Enrollment Program">
+            {group.program_name ||
+              group.program_code ||
+              'Not assigned'}
+          </EnrollmentDetailItem>
+
+          <EnrollmentDetailItem label="Section">
+            {group.section_code || '—'}
+          </EnrollmentDetailItem>
+
+          <EnrollmentDetailItem label="Year Level">
+            {yearLevel}
+          </EnrollmentDetailItem>
+
+          <EnrollmentDetailItem label="Student Type">
+            {group.student_type || 'Not recorded'}
+          </EnrollmentDetailItem>
+
+          <EnrollmentDetailItem label="Enrollment Status">
+            <StatusBadge status={group.status} />
+          </EnrollmentDetailItem>
+
+        </div>
       </div>
 
+      {/* INITIAL PROGRAM ASSIGNMENT NOTICE */}
+
+      {isPending && group.is_unassigned && (
+        <div className="registrar-enrollment-assignment-notice">
+          <Info size={18} />
+
+          <span>
+            This student does not yet have an
+            officially assigned program. The program
+            and compatible curriculum will be saved
+            during Registrar enrollment confirmation.
+          </span>
+        </div>
+      )}
+
+      {/* SUBJECT LIST */}
+
       <div
-        style={{
-          overflowX: 'auto',
-          border: `1px solid ${BORDER}`,
-          borderRadius: 8,
-          background: '#fff'
-        }}
+        className="registrar-table-wrapper"
+        style={{ marginTop: 0 }}
       >
         <table
           className="registrar-table"
@@ -343,18 +523,33 @@ function SubjectDetails({ group }) {
           </thead>
 
           <tbody>
-            {group.subjects.map(subject => (
+            {(group.subjects || []).map(subject => (
               <tr key={subject.enrollment_id}>
                 <td>
-                  <strong>{subject.subject_code}</strong>
+                  <strong>
+                    {subject.subject_code}
+                  </strong>
                 </td>
+
                 <td>{subject.subject_title}</td>
+
                 <td>{subject.units}</td>
+
                 <td>
-                  <StatusBadge status={subject.status} />
+                  <StatusBadge
+                    status={subject.status}
+                  />
                 </td>
               </tr>
             ))}
+
+            {!group.subjects?.length && (
+              <tr>
+                <td colSpan={4}>
+                  No subjects available.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -362,37 +557,525 @@ function SubjectDetails({ group }) {
   );
 }
 
+// ======================================================
+// ENROLLMENT CONFIRMATION MODAL
+// ======================================================
+
+function EnrollmentConfirmationModal({
+  group,
+  confirming,
+  onConfirm,
+  onClose
+}) {
+  const [curricula, setCurricula] =
+    useState([]);
+
+  const [curriculumId, setCurriculumId] =
+    useState('');
+
+  const [loadingCurricula, setLoadingCurricula] =
+    useState(true);
+
+  const [curriculumError, setCurriculumError] =
+    useState('');
+
+  const [reloadKey, setReloadKey] =
+    useState(0);
+
+  const officialCurriculumId =
+    group.official_curriculum_id;
+
+  const hasOfficialCurriculum =
+    officialCurriculumId !== null &&
+    officialCurriculumId !== undefined &&
+    Number(officialCurriculumId) > 0;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCurricula() {
+      setLoadingCurricula(true);
+      setCurriculumError('');
+      setCurricula([]);
+      setCurriculumId('');
+
+      try {
+        const response = await api.get(
+          '/api/registrar/enrollment-reviews/curricula',
+          {
+            params: {
+              student_id: group.student_id,
+              period_id: group.period_id,
+              section_id: group.section_id
+            }
+          }
+        );
+
+        if (cancelled) return;
+
+        const available = Array.isArray(
+          response.data?.curricula
+        )
+          ? response.data.curricula
+          : [];
+
+        setCurricula(available);
+
+        if (hasOfficialCurriculum) {
+          const official = available.find(
+            item =>
+              Number(item.curriculum_id) ===
+              Number(officialCurriculumId)
+          );
+
+          if (!official) {
+            setCurriculumError(
+              'The official student curriculum is not compatible with this prepared subject load.'
+            );
+
+            return;
+          }
+
+          setCurriculumId(
+            String(official.curriculum_id)
+          );
+
+          return;
+        }
+
+        if (available.length === 1) {
+          setCurriculumId(
+            String(available[0].curriculum_id)
+          );
+        }
+
+        if (!available.length) {
+          setCurriculumError(
+            'No active curriculum matches the prepared subjects. Return the subject load to Program Office Personnel for review.'
+          );
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setCurriculumError(
+            errorMessage(err)
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingCurricula(false);
+        }
+      }
+    }
+
+    loadCurricula();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    group.student_id,
+    group.period_id,
+    group.section_id,
+    officialCurriculumId,
+    hasOfficialCurriculum,
+    reloadKey
+  ]);
+
+  const selectedCurriculum = curricula.find(
+    item =>
+      String(item.curriculum_id) ===
+      String(curriculumId)
+  );
+
+  const yearLevel = Number(group.year_level);
+
+  const hasAcademicInformation =
+    Number.isInteger(yearLevel) &&
+    yearLevel > 0 &&
+    Boolean(
+      String(group.student_type || '').trim()
+    );
+
+  const canConfirm =
+    !confirming &&
+    !loadingCurricula &&
+    !curriculumError &&
+    hasAcademicInformation &&
+    Boolean(selectedCurriculum) &&
+    Number(group.subject_count) > 0;
+
+  return (
+    <div className="registrar-modal-overlay">
+      <div
+        className="registrar-logout-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="registrar-confirm-title"
+        style={{
+          width: 'min(560px, 94vw)',
+          maxWidth: 560,
+          maxHeight: '90vh',
+          overflowY: 'auto'
+        }}
+      >
+        <div className="registrar-modal-icon">
+          <BookOpen size={27} />
+        </div>
+
+        <h2 id="registrar-confirm-title">
+          Confirm Student Enrollment?
+        </h2>
+
+        <p>
+          Review the student's academic information
+          and curriculum before confirming the
+          prepared subject load.
+        </p>
+
+        {/* STUDENT CONFIRMATION INFORMATION */}
+
+        <div
+          style={{
+            textAlign: 'left',
+            padding: 15,
+            margin: '18px 0',
+            background: '#f6f8fc',
+            border: `1px solid ${BORDER}`,
+            borderRadius: 10
+          }}
+        >
+          <div
+            style={{
+              fontSize: 15,
+              fontWeight: 800,
+              color: NAVY,
+              marginBottom: 5
+            }}
+          >
+            {group.student_name}
+          </div>
+
+          <div
+            style={{
+              fontSize: 12,
+              color: MUTED,
+              marginBottom: 13
+            }}
+          >
+            {group.student_no}
+          </div>
+
+          <div className="registrar-information-list">
+            <InformationRow
+              label="Program"
+              value={
+                group.program_code ||
+                group.program_name ||
+                'Not assigned'
+              }
+            />
+
+            <InformationRow
+              label="Year Level"
+              value={formatYearLevel(
+                group.year_level
+              )}
+            />
+
+            <InformationRow
+              label="Student Type"
+              value={
+                group.student_type ||
+                'Not recorded'
+              }
+            />
+
+            <InformationRow
+              label="Academic Year"
+              value={group.school_year}
+            />
+
+            <InformationRow
+              label="Semester"
+              value={group.semester}
+            />
+
+            <InformationRow
+              label="Section"
+              value={group.section_code}
+            />
+
+            <InformationRow
+              label="Pending Subjects"
+              value={group.subject_count}
+            />
+
+            <InformationRow
+              label="Total Units"
+              value={group.total_units}
+            />
+
+            <InformationRow
+              label="Student Status"
+              value={
+                <StatusBadge
+                  status={group.student_status}
+                />
+              }
+            />
+          </div>
+        </div>
+
+        {/* CURRICULUM SELECTION */}
+
+        <div
+          style={{
+            textAlign: 'left',
+            marginBottom: 16
+          }}
+        >
+          <label
+            htmlFor="registrar-curriculum"
+            style={{
+              display: 'block',
+              fontSize: 13,
+              fontWeight: 700,
+              color: NAVY,
+              marginBottom: 8
+            }}
+          >
+            Official Curriculum
+
+            <span style={{ color: '#b42318' }}>
+              {' *'}
+            </span>
+          </label>
+
+          {loadingCurricula ? (
+            <div
+              style={{
+                padding: 13,
+                background: '#f6f8fc',
+                border: `1px solid ${BORDER}`,
+                borderRadius: 8,
+                color: MUTED,
+                fontSize: 12
+              }}
+            >
+              Retrieving compatible curricula...
+            </div>
+          ) : (
+            <select
+              id="registrar-curriculum"
+              value={curriculumId}
+              onChange={event =>
+                setCurriculumId(event.target.value)
+              }
+              disabled={
+                confirming ||
+                hasOfficialCurriculum ||
+                curricula.length <= 1
+              }
+              style={{
+                ...selectStyle,
+                background:
+                  hasOfficialCurriculum ||
+                  curricula.length <= 1
+                    ? '#f6f8fc'
+                    : '#fff'
+              }}
+            >
+              <option value="">
+                Select curriculum...
+              </option>
+
+              {curricula.map(curriculum => (
+                <option
+                  key={curriculum.curriculum_id}
+                  value={String(
+                    curriculum.curriculum_id
+                  )}
+                >
+                  {curriculumLabel(curriculum)}
+                </option>
+              ))}
+            </select>
+          )}
+
+          {!loadingCurricula && !curriculumError && (
+            <div
+              style={{
+                marginTop: 8,
+                fontSize: 11,
+                color: MUTED,
+                lineHeight: 1.6
+              }}
+            >
+              {hasOfficialCurriculum
+                ? 'The existing official student curriculum is retained.'
+                : curricula.length === 1
+                  ? 'The only compatible curriculum has been selected automatically.'
+                  : 'Multiple curricula match the prepared subjects. Verify and select the correct curriculum before confirming.'}
+            </div>
+          )}
+
+          {curriculumError && (
+            <div style={{ marginTop: 12 }}>
+              <Notice type="error">
+                {curriculumError}
+              </Notice>
+
+              <button
+                type="button"
+                style={smallButton}
+                disabled={confirming}
+                onClick={() =>
+                  setReloadKey(value => value + 1)
+                }
+              >
+                <RefreshCw size={14} />
+                Retry Curriculum Loading
+              </button>
+            </div>
+          )}
+        </div>
+
+        {!hasAcademicInformation && (
+          <Notice type="error">
+            This student has incomplete academic
+            information. Year level and student type
+            must be recorded before confirmation.
+          </Notice>
+        )}
+
+        {/* CONFIRMATION NOTICE */}
+
+        <div
+          className="registrar-enrollment-assignment-notice"
+          style={{ textAlign: 'left' }}
+        >
+          <ShieldCheck size={19} />
+
+          <span>
+            {group.is_unassigned
+              ? 'Confirmation will officially assign the selected program and curriculum to this student, activate the student profile, and confirm the pending subjects.'
+              : 'Confirmation will retain the existing academic assignment and change the pending subject enrollments to enrolled.'}
+
+            {' '}
+
+            The student number, year level and
+            student type will remain unchanged.
+          </span>
+        </div>
+
+        {/* MODAL ACTIONS */}
+
+        <div className="registrar-modal-actions">
+          <button
+            type="button"
+            className="registrar-modal-cancel"
+            onClick={onClose}
+            disabled={confirming}
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            className="registrar-modal-confirm"
+            onClick={() =>
+              onConfirm(Number(curriculumId))
+            }
+            disabled={!canConfirm}
+            style={{
+              opacity: canConfirm ? 1 : 0.55,
+              cursor: canConfirm
+                ? 'pointer'
+                : 'not-allowed'
+            }}
+          >
+            {confirming
+              ? 'Confirming...'
+              : 'Yes, Confirm Enrollment'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ======================================================
+// MAIN REGISTRAR DASHBOARD
+// ======================================================
+
 function RegistrarDashboard() {
   const navigate = useNavigate();
   const auth = useContext(AuthContext);
 
+  // ====================================================
+  // STATE
+  // ====================================================
+
   const [activeSection, setActiveSection] =
     useState('dashboard');
 
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Mobile sidebar
+
+  const [sidebarOpen, setSidebarOpen] =
+    useState(false);
+
+  // Desktop sidebar
+
+  const [sidebarCollapsed, setSidebarCollapsed] =
+    useState(false);
+
   const [showLogoutModal, setShowLogoutModal] =
     useState(false);
-  const [loggingOut, setLoggingOut] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
 
-  const [dashboard, setDashboard] = useState(null);
-  const [reviews, setReviews] = useState([]);
-  const [records, setRecords] = useState([]);
-  const [students, setStudents] = useState([]);
+  const [loggingOut, setLoggingOut] =
+    useState(false);
 
-  const [loading, setLoading] = useState(false);
-  const [confirming, setConfirming] = useState(false);
+  const [searchTerm, setSearchTerm] =
+    useState('');
 
-  const [expandedGroup, setExpandedGroup] = useState('');
+  const [dashboard, setDashboard] =
+    useState(null);
+
+  const [reviews, setReviews] =
+    useState([]);
+
+  const [records, setRecords] =
+    useState([]);
+
+  const [students, setStudents] =
+    useState([]);
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [confirming, setConfirming] =
+    useState(false);
+
+  const [expandedGroup, setExpandedGroup] =
+    useState('');
+
   const [confirmationGroup, setConfirmationGroup] =
     useState(null);
 
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] =
+    useState('');
+
+  const [success, setSuccess] =
+    useState('');
+
+  // ====================================================
+  // CURRENT USER
+  // ====================================================
 
   const currentPage =
-    navigation.find(item => item.id === activeSection) ||
-    navigation[0];
+    navigation.find(
+      item => item.id === activeSection
+    ) || navigation[0];
 
   const registrarUser = auth?.user;
 
@@ -412,41 +1095,67 @@ function RegistrarDashboard() {
     'Registrar Personnel';
 
   const displayEmail =
-    registrarUser?.email || 'Not available';
+    registrarUser?.email ||
+    registrarUser?.username ||
+    'Not available';
 
-  const loadData = useCallback(async (section) => {
+  // ====================================================
+  // LOAD DATA
+  // ====================================================
+
+  const loadData = useCallback(async (
+    section,
+    { clearError = true } = {}
+  ) => {
     if (section === 'profile') return;
 
-    setLoading(true);
-    setError('');
-
     const endpoints = {
-      dashboard: '/api/registrar/dashboard',
+      dashboard:
+        '/api/registrar/dashboard',
+
       'enrollment-review':
         '/api/registrar/enrollment-reviews',
+
       'enrollment-records':
         '/api/registrar/enrollment-records',
+
       'student-records':
         '/api/registrar/students'
     };
 
+    if (!endpoints[section]) return;
+
+    setLoading(true);
+
+    if (clearError) {
+      setError('');
+    }
+
     try {
-      const response = await api.get(endpoints[section]);
+      const response = await api.get(
+        endpoints[section]
+      );
 
       if (section === 'dashboard') {
         setDashboard(response.data);
       }
 
       if (section === 'enrollment-review') {
-        setReviews(response.data?.reviews || []);
+        setReviews(
+          response.data?.reviews || []
+        );
       }
 
       if (section === 'enrollment-records') {
-        setRecords(response.data?.records || []);
+        setRecords(
+          response.data?.records || []
+        );
       }
 
       if (section === 'student-records') {
-        setStudents(response.data?.students || []);
+        setStudents(
+          response.data?.students || []
+        );
       }
     } catch (err) {
       setError(errorMessage(err));
@@ -459,6 +1168,54 @@ function RegistrarDashboard() {
     loadData(activeSection);
   }, [activeSection, loadData]);
 
+  // ====================================================
+  // SIDEBAR RESPONSIVENESS
+  // ====================================================
+
+  useEffect(() => {
+    function handleResize() {
+      if (window.innerWidth > 900) {
+        setSidebarOpen(false);
+      }
+    }
+
+    window.addEventListener(
+      'resize',
+      handleResize
+    );
+
+    return () => {
+      window.removeEventListener(
+        'resize',
+        handleResize
+      );
+    };
+  }, []);
+
+  useEffect(() => {
+    function handleKeyDown(event) {
+      if (event.key === 'Escape') {
+        setSidebarOpen(false);
+      }
+    }
+
+    window.addEventListener(
+      'keydown',
+      handleKeyDown
+    );
+
+    return () => {
+      window.removeEventListener(
+        'keydown',
+        handleKeyDown
+      );
+    };
+  }, []);
+
+  // ====================================================
+  // SEARCH FILTERS
+  // ====================================================
+
   const filteredReviews = useMemo(() => {
     const query = normalize(searchTerm);
 
@@ -469,9 +1226,12 @@ function RegistrarDashboard() {
         group.student_no,
         group.student_name,
         group.program_code,
+        group.program_name,
         group.section_code,
         group.school_year,
-        group.semester
+        group.semester,
+        group.student_type,
+        formatYearLevel(group.year_level)
       ].some(value =>
         normalize(value).includes(query)
       );
@@ -488,6 +1248,7 @@ function RegistrarDashboard() {
         group.student_no,
         group.student_name,
         group.program_code,
+        group.program_name,
         group.section_code,
         group.school_year,
         group.semester
@@ -507,14 +1268,25 @@ function RegistrarDashboard() {
         student.student_no,
         student.student_name,
         student.email,
-        student.program_code
+        student.program_code,
+        student.program_name,
+        student.curriculum_year,
+        student.student_type,
+        student.status,
+        formatYearLevel(student.year_level)
       ].some(value =>
         normalize(value).includes(query)
       );
     });
   }, [students, searchTerm]);
 
+  // ====================================================
+  // NAVIGATION ACTIONS
+  // ====================================================
+
   function changeSection(section) {
+    if (confirming) return;
+
     setActiveSection(section);
     setSidebarOpen(false);
     setSearchTerm('');
@@ -524,8 +1296,52 @@ function RegistrarDashboard() {
     setSuccess('');
   }
 
-  async function confirmEnrollment() {
-    if (!confirmationGroup || confirming) return;
+  function toggleDesktopSidebar() {
+    setSidebarCollapsed(previous => !previous);
+    setSidebarOpen(false);
+  }
+
+  function toggleExpandedGroup(groupId) {
+    setExpandedGroup(previous =>
+      previous === groupId
+        ? ''
+        : groupId
+    );
+  }
+
+  // ====================================================
+  // ENROLLMENT CONFIRMATION
+  // ====================================================
+
+  function openConfirmation(group) {
+    if (confirming) return;
+
+    setError('');
+    setSuccess('');
+    setConfirmationGroup(group);
+  }
+
+  function closeConfirmation() {
+    if (confirming) return;
+
+    setConfirmationGroup(null);
+  }
+
+  async function confirmEnrollment(curriculumId) {
+    if (!confirmationGroup || confirming) {
+      return;
+    }
+
+    if (
+      !Number.isSafeInteger(curriculumId) ||
+      curriculumId <= 0
+    ) {
+      setError(
+        'Please select a valid curriculum.'
+      );
+
+      return;
+    }
 
     setConfirming(true);
     setError('');
@@ -535,9 +1351,17 @@ function RegistrarDashboard() {
       const response = await api.post(
         '/api/registrar/enrollment-reviews/confirm',
         {
-          student_id: confirmationGroup.student_id,
-          period_id: confirmationGroup.period_id,
-          section_id: confirmationGroup.section_id
+          student_id:
+            confirmationGroup.student_id,
+
+          period_id:
+            confirmationGroup.period_id,
+
+          section_id:
+            confirmationGroup.section_id,
+
+          curriculum_id:
+            curriculumId
         }
       );
 
@@ -549,19 +1373,30 @@ function RegistrarDashboard() {
         'Enrollment confirmed successfully.'
       );
 
-      await loadData('enrollment-review');
+      await loadData('enrollment-review', {
+        clearError: false
+      });
     } catch (err) {
-      setConfirmationGroup(null);
-      setError(errorMessage(err));
+      const message = errorMessage(err);
 
-      await loadData('enrollment-review');
+      setConfirmationGroup(null);
+
+      await loadData('enrollment-review', {
+        clearError: false
+      });
+
+      setError(message);
     } finally {
       setConfirming(false);
     }
   }
 
-  function handleLogout() {
-    if (loggingOut) return;
+  // ====================================================
+  // LOGOUT
+  // ====================================================
+
+  async function handleLogout() {
+    if (loggingOut || confirming) return;
 
     setLoggingOut(true);
 
@@ -572,7 +1407,7 @@ function RegistrarDashboard() {
         );
       }
 
-      auth.logout();
+      await auth.logout();
 
       setShowLogoutModal(false);
       setSidebarOpen(false);
@@ -581,7 +1416,11 @@ function RegistrarDashboard() {
         replace: true
       });
     } catch (err) {
-      console.error('Registrar logout failed:', err);
+      console.error(
+        'Registrar logout failed:',
+        err
+      );
+
       setLoggingOut(false);
 
       window.alert(
@@ -590,8 +1429,13 @@ function RegistrarDashboard() {
     }
   }
 
+  // ====================================================
+  // DASHBOARD
+  // ====================================================
+
   function renderDashboard() {
-    const activePeriod = dashboard?.active_period;
+    const activePeriod =
+      dashboard?.active_period;
 
     return (
       <>
@@ -639,7 +1483,7 @@ function RegistrarDashboard() {
                 ? '...'
                 : dashboard?.confirmed_enrollments ?? '—'
             }
-            description="Confirmed student-period records"
+            description="Confirmed student enrollment groups"
           />
 
           <OverviewCard
@@ -656,7 +1500,10 @@ function RegistrarDashboard() {
           <OverviewCard
             icon={CalendarDays}
             label="Academic Term"
-            value={activePeriod?.semester || 'Not assigned'}
+            value={
+              activePeriod?.semester ||
+              'Not assigned'
+            }
             description={
               activePeriod?.school_year ||
               'No active academic period'
@@ -666,23 +1513,18 @@ function RegistrarDashboard() {
 
         <div className="registrar-dashboard-columns">
           <section className="registrar-panel">
-            <div className="registrar-panel-heading">
-              <div>
-                <h3>Enrollment Overview</h3>
-
-                <p>
-                  Current enrollment verification and
-                  registrar activities.
-                </p>
-              </div>
-
-              <School size={22} />
-            </div>
+            <PanelHeading
+              title="Enrollment Overview"
+              description="Current enrollment verification and registrar activities."
+              icon={School}
+            />
 
             <div className="registrar-information-list">
               <InformationRow
                 label="Pending Enrollment Reviews"
-                value={dashboard?.pending_reviews ?? '—'}
+                value={
+                  dashboard?.pending_reviews ?? '—'
+                }
               />
 
               <InformationRow
@@ -695,33 +1537,32 @@ function RegistrarDashboard() {
               <InformationRow
                 label="Academic Year"
                 value={
-                  activePeriod?.school_year || 'Not assigned'
+                  activePeriod?.school_year ||
+                  'Not assigned'
                 }
               />
 
               <InformationRow
                 label="Semester"
                 value={
-                  activePeriod?.semester || 'Not assigned'
+                  activePeriod?.semester ||
+                  'Not assigned'
                 }
               />
             </div>
           </section>
 
           <section className="registrar-panel">
-            <div className="registrar-panel-heading">
-              <div>
-                <h3>Quick Access</h3>
-
-                <p>
-                  Navigate to registrar services.
-                </p>
-              </div>
-            </div>
+            <PanelHeading
+              title="Quick Access"
+              description="Navigate to registrar services."
+            />
 
             <div className="registrar-quick-links">
               {navigation
-                .filter(item => item.id !== 'dashboard')
+                .filter(
+                  item => item.id !== 'dashboard'
+                )
                 .map(item => {
                   const Icon = item.icon;
 
@@ -739,6 +1580,7 @@ function RegistrarDashboard() {
                       </span>
 
                       <span>{item.label}</span>
+
                       <ChevronRight size={17} />
                     </button>
                   );
@@ -756,10 +1598,12 @@ function RegistrarDashboard() {
             </strong>
 
             <p>
-              Subject loads prepared by Program Office
-              Personnel appear in Enrollment Review.
-              Confirmed loads become official enrolled
-              records and appear in Enrollment Records.
+              Subject loads prepared by Program
+              Office Personnel appear in Enrollment
+              Review. Confirmation officially assigns
+              the program and curriculum of newly
+              assigned students and changes pending
+              subject enrollments to enrolled.
             </p>
           </div>
         </section>
@@ -767,49 +1611,31 @@ function RegistrarDashboard() {
     );
   }
 
+  // ====================================================
+  // ENROLLMENT REVIEW
+  // ====================================================
+
   function renderEnrollmentReview() {
     return (
       <section className="registrar-panel">
-        <div className="registrar-panel-heading">
-          <div>
-            <h3>Enrollment Review</h3>
+        <PanelHeading
+          title="Enrollment Review"
+          description="Review pending student subject loads before official enrollment confirmation."
+          icon={ClipboardCheck}
+        />
 
-            <p>
-              Review pending student subject loads
-              before official enrollment confirmation.
-            </p>
-          </div>
+        <SearchToolbar
+          searchTerm={searchTerm}
+          onSearch={setSearchTerm}
+          placeholder="Search student, number, or section"
+          label="Search enrollment reviews"
+          onRefresh={() =>
+            loadData('enrollment-review')
+          }
+          disabled={loading || confirming}
+        />
 
-          <ClipboardCheck size={22} />
-        </div>
-
-        <div className="registrar-toolbar">
-          <div className="registrar-search-field">
-            <Search size={18} />
-
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={event =>
-                setSearchTerm(event.target.value)
-              }
-              placeholder="Search student, number, or section"
-              aria-label="Search enrollment reviews"
-            />
-          </div>
-
-          <button
-            type="button"
-            onClick={() =>
-              loadData('enrollment-review')
-            }
-            disabled={loading}
-            style={smallButton}
-          >
-            <RefreshCw size={15} />
-            Refresh
-          </button>
-        </div>
+        {/* NAVY HEADER / GOLD LINE / ZEBRA TABLE */}
 
         <div className="registrar-table-wrapper">
           <table className="registrar-table">
@@ -819,6 +1645,7 @@ function RegistrarDashboard() {
                 <th>Student Name</th>
                 <th>Program</th>
                 <th>Year Level</th>
+                <th>Student Type</th>
                 <th>Academic Term</th>
                 <th>Section</th>
                 <th>Subjects</th>
@@ -830,46 +1657,87 @@ function RegistrarDashboard() {
             <tbody>
               {filteredReviews.map(group => (
                 <tr key={group.group_id}>
-                  <td>{group.student_no}</td>
                   <td>
-                    <strong>{group.student_name}</strong>
+                    {group.student_no}
                   </td>
-                  <td>{group.program_code}</td>
-                  <td>Year {group.year_level}</td>
+
+                  <td>
+                    <strong>
+                      {group.student_name}
+                    </strong>
+
+                    {group.is_unassigned && (
+                      <span style={pendingText}>
+                        Initial program assignment
+                      </span>
+                    )}
+                  </td>
+
+                  <td>
+                    <strong>
+                      {group.program_code}
+                    </strong>
+
+                    {group.is_unassigned && (
+                      <span style={secondaryText}>
+                        Pending assignment
+                      </span>
+                    )}
+                  </td>
+
+                  <td>
+                    {formatYearLevel(
+                      group.year_level
+                    )}
+                  </td>
+
+                  <td>
+                    {group.student_type ||
+                      'Not recorded'}
+                  </td>
+
                   <td>
                     {group.school_year}
-                    <div
-                      style={{
-                        fontSize: 11,
-                        color: MUTED,
-                        marginTop: 4
-                      }}
-                    >
+
+                    <span style={secondaryText}>
                       {group.semester}
-                    </div>
+                    </span>
                   </td>
-                  <td>{group.section_code}</td>
+
+                  <td>
+                    {group.section_code}
+                  </td>
+
                   <td>
                     {group.subject_count}
                     {' · '}
                     {group.total_units} units
                   </td>
+
                   <td>
-                    <StatusBadge status={group.status} />
+                    <StatusBadge
+                      status={group.status}
+                    />
                   </td>
+
                   <td>
                     <button
                       type="button"
                       onClick={() =>
-                        setExpandedGroup(previous =>
-                          previous === group.group_id
-                            ? ''
-                            : group.group_id
+                        toggleExpandedGroup(
+                          group.group_id
                         )
                       }
                       style={smallButton}
+                      disabled={confirming}
+                      aria-expanded={
+                        expandedGroup === group.group_id
+                      }
                     >
-                      <Eye size={15} />
+                      {expandedGroup === group.group_id
+                        ? <ChevronDown size={15} />
+                        : <Eye size={15} />}
+
                       Review
                     </button>
                   </td>
@@ -878,7 +1746,7 @@ function RegistrarDashboard() {
 
               {!filteredReviews.length && (
                 <tr>
-                  <td colSpan={9}>
+                  <td colSpan={10}>
                     <EmptyState
                       icon={ClipboardCheck}
                       title={
@@ -899,9 +1767,12 @@ function RegistrarDashboard() {
           </table>
         </div>
 
+        {/* EXPANDED SUBJECT DETAILS */}
+
         {filteredReviews
-          .filter(group =>
-            group.group_id === expandedGroup
+          .filter(
+            group =>
+              group.group_id === expandedGroup
           )
           .map(group => (
             <div
@@ -930,15 +1801,17 @@ function RegistrarDashboard() {
                   }}
                 >
                   <Info size={15} />
-                  Confirmation applies to all pending
-                  subjects for this student and period.
+
+                  Confirmation applies to the
+                  reviewed pending subject load.
                 </span>
 
                 <button
                   type="button"
                   onClick={() =>
-                    setConfirmationGroup(group)
+                    openConfirmation(group)
                   }
+                  disabled={confirming}
                   style={primaryButton}
                 >
                   <CheckCircle2 size={16} />
@@ -955,58 +1828,41 @@ function RegistrarDashboard() {
           <ShieldCheck size={18} />
 
           <p>
-            Only authorized Registrar Personnel can
-            confirm pending enrollments. Confirmation
-            changes subject enrollment status to enrolled.
+            Only authorized Registrar Personnel
+            can confirm pending enrollments.
+            Confirmation officially assigns the
+            program and curriculum of unassigned
+            students and changes the pending
+            subject enrollment status to enrolled.
           </p>
         </div>
       </section>
     );
   }
 
+  // ====================================================
+  // ENROLLMENT RECORDS
+  // ====================================================
+
   function renderEnrollmentRecords() {
     return (
       <section className="registrar-panel">
-        <div className="registrar-panel-heading">
-          <div>
-            <h3>Enrollment Records</h3>
+        <PanelHeading
+          title="Enrollment Records"
+          description="View confirmed enrollment records and individual student subject loads."
+          icon={FolderOpen}
+        />
 
-            <p>
-              View confirmed enrollment records
-              and individual student subject loads.
-            </p>
-          </div>
-
-          <FolderOpen size={22} />
-        </div>
-
-        <div className="registrar-toolbar">
-          <div className="registrar-search-field">
-            <Search size={18} />
-
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={event =>
-                setSearchTerm(event.target.value)
-              }
-              placeholder="Search confirmed enrollment records"
-              aria-label="Search enrollment records"
-            />
-          </div>
-
-          <button
-            type="button"
-            onClick={() =>
-              loadData('enrollment-records')
-            }
-            disabled={loading}
-            style={smallButton}
-          >
-            <RefreshCw size={15} />
-            Refresh
-          </button>
-        </div>
+        <SearchToolbar
+          searchTerm={searchTerm}
+          onSearch={setSearchTerm}
+          placeholder="Search confirmed enrollment records"
+          label="Search enrollment records"
+          onRefresh={() =>
+            loadData('enrollment-records')
+          }
+          disabled={loading}
+        />
 
         <div className="registrar-table-wrapper">
           <table className="registrar-table">
@@ -1015,6 +1871,7 @@ function RegistrarDashboard() {
                 <th>Student Number</th>
                 <th>Student Name</th>
                 <th>Program</th>
+                <th>Year Level</th>
                 <th>Academic Year</th>
                 <th>Semester</th>
                 <th>Section</th>
@@ -1027,37 +1884,68 @@ function RegistrarDashboard() {
             <tbody>
               {filteredRecords.map(group => (
                 <tr key={group.group_id}>
-                  <td>{group.student_no}</td>
                   <td>
-                    <strong>{group.student_name}</strong>
+                    {group.student_no}
                   </td>
-                  <td>{group.program_code}</td>
-                  <td>{group.school_year}</td>
-                  <td>{group.semester}</td>
-                  <td>{group.section_code}</td>
+
+                  <td>
+                    <strong>
+                      {group.student_name}
+                    </strong>
+                  </td>
+
+                  <td>
+                    {group.program_code}
+                  </td>
+
+                  <td>
+                    {formatYearLevel(
+                      group.section_year_level ??
+                      group.year_level
+                    )}
+                  </td>
+
+                  <td>
+                    {group.school_year}
+                  </td>
+
+                  <td>
+                    {group.semester}
+                  </td>
+
+                  <td>
+                    {group.section_code}
+                  </td>
+
                   <td>
                     {group.subject_count}
                     {' · '}
                     {group.total_units} units
                   </td>
+
                   <td>
-                    <StatusBadge status={group.status} />
+                    <StatusBadge
+                      status={group.status}
+                    />
                   </td>
+
                   <td>
                     <button
                       type="button"
                       onClick={() =>
-                        setExpandedGroup(previous =>
-                          previous === group.group_id
-                            ? ''
-                            : group.group_id
+                        toggleExpandedGroup(
+                          group.group_id
                         )
                       }
                       style={smallButton}
+                      aria-expanded={
+                        expandedGroup === group.group_id
+                      }
                     >
                       {expandedGroup === group.group_id
                         ? <ChevronDown size={15} />
                         : <Eye size={15} />}
+
                       View
                     </button>
                   </td>
@@ -1066,7 +1954,7 @@ function RegistrarDashboard() {
 
               {!filteredRecords.length && (
                 <tr>
-                  <td colSpan={9}>
+                  <td colSpan={10}>
                     <EmptyState
                       icon={FolderOpen}
                       title={
@@ -1088,8 +1976,9 @@ function RegistrarDashboard() {
         </div>
 
         {filteredRecords
-          .filter(group =>
-            group.group_id === expandedGroup
+          .filter(
+            group =>
+              group.group_id === expandedGroup
           )
           .map(group => (
             <div
@@ -1103,49 +1992,29 @@ function RegistrarDashboard() {
     );
   }
 
+  // ====================================================
+  // STUDENT RECORDS
+  // ====================================================
+
   function renderStudentRecords() {
     return (
       <section className="registrar-panel">
-        <div className="registrar-panel-heading">
-          <div>
-            <h3>Student Records</h3>
+        <PanelHeading
+          title="Student Records"
+          description="Access the student directory and official academic assignments for registrar verification."
+          icon={Users}
+        />
 
-            <p>
-              Access the student directory for
-              registrar verification.
-            </p>
-          </div>
-
-          <Users size={22} />
-        </div>
-
-        <div className="registrar-toolbar">
-          <div className="registrar-search-field">
-            <Search size={18} />
-
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={event =>
-                setSearchTerm(event.target.value)
-              }
-              placeholder="Search student name, email, or number"
-              aria-label="Search student records"
-            />
-          </div>
-
-          <button
-            type="button"
-            onClick={() =>
-              loadData('student-records')
-            }
-            disabled={loading}
-            style={smallButton}
-          >
-            <RefreshCw size={15} />
-            Refresh
-          </button>
-        </div>
+        <SearchToolbar
+          searchTerm={searchTerm}
+          onSearch={setSearchTerm}
+          placeholder="Search student name, email, or number"
+          label="Search student records"
+          onRefresh={() =>
+            loadData('student-records')
+          }
+          disabled={loading}
+        />
 
         <div className="registrar-table-wrapper">
           <table className="registrar-table">
@@ -1155,7 +2024,9 @@ function RegistrarDashboard() {
                 <th>Student Name</th>
                 <th>Email</th>
                 <th>Program</th>
+                <th>Curriculum</th>
                 <th>Year Level</th>
+                <th>Student Type</th>
                 <th>Status</th>
               </tr>
             </thead>
@@ -1163,22 +2034,81 @@ function RegistrarDashboard() {
             <tbody>
               {filteredStudents.map(student => (
                 <tr key={student.student_id}>
-                  <td>{student.student_no}</td>
+                  <td>
+                    {student.student_no}
+                  </td>
+
                   <td>
                     <strong>
                       {student.student_name}
                     </strong>
                   </td>
-                  <td>{student.email || '—'}</td>
-                  <td>{student.program_code}</td>
-                  <td>Year {student.year_level}</td>
-                  <td>{student.status || '—'}</td>
+
+                  <td>
+                    {student.email || '—'}
+                  </td>
+
+                  <td>
+                    {student.program_id != null ? (
+                      <>
+                        <strong>
+                          {student.program_code}
+                        </strong>
+
+                        <span style={secondaryText}>
+                          {student.program_name}
+                        </span>
+                      </>
+                    ) : (
+                      <span style={pendingText}>
+                        Not assigned
+                      </span>
+                    )}
+                  </td>
+
+                  <td>
+                    {student.curriculum_id != null ? (
+                      <>
+                        <strong>
+                          {student.curriculum_year ||
+                            `Curriculum ${student.curriculum_id}`}
+                        </strong>
+
+                        {student.curriculum_description && (
+                          <span style={secondaryText}>
+                            {student.curriculum_description}
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <span style={pendingText}>
+                        Not assigned
+                      </span>
+                    )}
+                  </td>
+
+                  <td>
+                    {formatYearLevel(
+                      student.year_level
+                    )}
+                  </td>
+
+                  <td>
+                    {student.student_type ||
+                      'Not recorded'}
+                  </td>
+
+                  <td>
+                    <StatusBadge
+                      status={student.status}
+                    />
+                  </td>
                 </tr>
               ))}
 
               {!filteredStudents.length && (
                 <tr>
-                  <td colSpan={6}>
+                  <td colSpan={8}>
                     <EmptyState
                       icon={GraduationCap}
                       title={
@@ -1198,9 +2128,27 @@ function RegistrarDashboard() {
             </tbody>
           </table>
         </div>
+
+        <div
+          className="registrar-inline-note"
+          style={{ marginTop: 18 }}
+        >
+          <Info size={18} />
+
+          <p>
+            Newly created students may have no
+            assigned program or curriculum.
+            Official academic assignments are
+            recorded during enrollment confirmation.
+          </p>
+        </div>
       </section>
     );
   }
+
+  // ====================================================
+  // REGISTRAR PROFILE
+  // ====================================================
 
   function renderProfile() {
     return (
@@ -1211,6 +2159,7 @@ function RegistrarDashboard() {
           </div>
 
           <h3>{displayName}</h3>
+
           <p>Registrar Personnel</p>
 
           <span className="registrar-profile-label">
@@ -1219,17 +2168,11 @@ function RegistrarDashboard() {
         </section>
 
         <section className="registrar-panel">
-          <div className="registrar-panel-heading">
-            <div>
-              <h3>Personnel Information</h3>
-
-              <p>
-                Account and personnel profile overview.
-              </p>
-            </div>
-
-            <ShieldCheck size={22} />
-          </div>
+          <PanelHeading
+            title="Personnel Information"
+            description="Account and personnel profile overview."
+            icon={ShieldCheck}
+          />
 
           <div className="registrar-information-list">
             <InformationRow
@@ -1257,6 +2200,10 @@ function RegistrarDashboard() {
     );
   }
 
+  // ====================================================
+  // PAGE CONTENT
+  // ====================================================
+
   function renderContent() {
     switch (activeSection) {
       case 'enrollment-review':
@@ -1276,8 +2223,21 @@ function RegistrarDashboard() {
     }
   }
 
+  // ====================================================
+  // MAIN LAYOUT
+  // ====================================================
+
   return (
-    <div className="registrar-layout">
+    <div
+      className={`registrar-layout ${
+        sidebarCollapsed
+          ? 'registrar-layout-collapsed'
+          : ''
+      }`}
+    >
+
+      {/* MOBILE SIDEBAR OVERLAY */}
+
       {sidebarOpen && (
         <button
           type="button"
@@ -1289,13 +2249,19 @@ function RegistrarDashboard() {
         />
       )}
 
+      {/* SIDEBAR */}
+
       <aside
+        id="registrar-sidebar"
         className={`registrar-sidebar ${
           sidebarOpen
             ? 'registrar-sidebar-open'
             : ''
         }`}
       >
+
+        {/* PBCC BRAND */}
+
         <div className="registrar-brand">
           <img
             src="/pbcc-logo.png"
@@ -1319,6 +2285,8 @@ function RegistrarDashboard() {
           </button>
         </div>
 
+        {/* NAVIGATION */}
+
         <div className="registrar-sidebar-label">
           MAIN NAVIGATION
         </div>
@@ -1337,6 +2305,7 @@ function RegistrarDashboard() {
                 onClick={() =>
                   changeSection(item.id)
                 }
+                disabled={confirming}
                 className={`registrar-nav-item ${
                   activeSection === item.id
                     ? 'registrar-nav-active'
@@ -1360,6 +2329,8 @@ function RegistrarDashboard() {
           })}
         </nav>
 
+        {/* SIDEBAR ACCOUNT */}
+
         <div className="registrar-sidebar-bottom">
           <div className="registrar-sidebar-account">
             <div className="registrar-account-avatar">
@@ -1375,6 +2346,7 @@ function RegistrarDashboard() {
           <button
             type="button"
             className="registrar-logout-button"
+            disabled={confirming}
             onClick={() =>
               setShowLogoutModal(true)
             }
@@ -1385,19 +2357,57 @@ function RegistrarDashboard() {
         </div>
       </aside>
 
+      {/* MAIN CONTENT AREA */}
+
       <div className="registrar-main">
+
+        {/* TOPBAR */}
+
         <header className="registrar-topbar">
           <div className="registrar-topbar-left">
+
+            {/* DESKTOP SIDEBAR TOGGLE */}
+
+            <button
+              type="button"
+              className="registrar-desktop-sidebar-toggle"
+              onClick={toggleDesktopSidebar}
+              aria-label={
+                sidebarCollapsed
+                  ? 'Expand sidebar'
+                  : 'Collapse sidebar'
+              }
+              aria-expanded={!sidebarCollapsed}
+              aria-controls="registrar-sidebar"
+              title={
+                sidebarCollapsed
+                  ? 'Expand sidebar'
+                  : 'Collapse sidebar'
+              }
+            >
+              {sidebarCollapsed ? (
+                <Menu size={22} />
+              ) : (
+                <PanelLeftClose size={22} />
+              )}
+            </button>
+
+            {/* MOBILE SIDEBAR TOGGLE */}
+
             <button
               type="button"
               className="registrar-menu-button"
               aria-label="Open navigation"
+              aria-expanded={sidebarOpen}
+              aria-controls="registrar-sidebar"
               onClick={() =>
                 setSidebarOpen(true)
               }
             >
               <Menu size={23} />
             </button>
+
+            {/* CURRENT PAGE TITLE */}
 
             <div>
               <h1>{currentPage.label}</h1>
@@ -1407,6 +2417,8 @@ function RegistrarDashboard() {
               </p>
             </div>
           </div>
+
+          {/* TOPBAR ACCOUNT */}
 
           <div className="registrar-topbar-account">
             <div className="registrar-topbar-avatar">
@@ -1419,6 +2431,8 @@ function RegistrarDashboard() {
             </div>
           </div>
         </header>
+
+        {/* PAGE CONTENT */}
 
         <main className="registrar-content">
           {error && (
@@ -1442,84 +2456,27 @@ function RegistrarDashboard() {
           {renderContent()}
         </main>
 
+        {/* FOOTER */}
+
         <footer className="registrar-footer">
           © {new Date().getFullYear()} Pangantucan
           Bukidnon Community College
         </footer>
       </div>
 
+      {/* ENROLLMENT CONFIRMATION MODAL */}
+
       {confirmationGroup && (
-        <div className="registrar-modal-overlay">
-          <div
-            className="registrar-logout-modal"
-            role="alertdialog"
-            aria-modal="true"
-            aria-labelledby="registrar-confirm-title"
-          >
-            <div className="registrar-modal-icon">
-              <BookOpen size={27} />
-            </div>
-
-            <h2 id="registrar-confirm-title">
-              Confirm Student Enrollment?
-            </h2>
-
-            <p>
-              You are about to officially enroll
-              {' '}
-              <strong>
-                {confirmationGroup.student_name}
-              </strong>
-              {' '}
-              in {confirmationGroup.subject_count}
-              {' '}
-              pending subjects for
-              {' '}
-              {confirmationGroup.school_year}
-              {' '}
-              {confirmationGroup.semester}.
-            </p>
-
-            <p>
-              Section:
-              {' '}
-              <strong>
-                {confirmationGroup.section_code}
-              </strong>
-              {' · '}
-              Total Units:
-              {' '}
-              <strong>
-                {confirmationGroup.total_units}
-              </strong>
-            </p>
-
-            <div className="registrar-modal-actions">
-              <button
-                type="button"
-                className="registrar-modal-cancel"
-                onClick={() =>
-                  setConfirmationGroup(null)
-                }
-                disabled={confirming}
-              >
-                Cancel
-              </button>
-
-              <button
-                type="button"
-                className="registrar-modal-confirm"
-                onClick={confirmEnrollment}
-                disabled={confirming}
-              >
-                {confirming
-                  ? 'Confirming...'
-                  : 'Yes, Confirm Enrollment'}
-              </button>
-            </div>
-          </div>
-        </div>
+        <EnrollmentConfirmationModal
+          key={confirmationGroup.group_id}
+          group={confirmationGroup}
+          confirming={confirming}
+          onConfirm={confirmEnrollment}
+          onClose={closeConfirmation}
+        />
       )}
+
+      {/* LOGOUT CONFIRMATION MODAL */}
 
       {showLogoutModal && (
         <div className="registrar-modal-overlay">

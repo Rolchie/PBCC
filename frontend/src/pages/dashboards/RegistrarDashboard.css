@@ -1,4 +1,3 @@
-
 /* ========================================
    PBCC REGISTRAR PERSONNEL PORTAL
    COMPLETE STYLESHEET
@@ -9,13 +8,13 @@
   --registrar-gold: #d6a849;
   --registrar-border: #e1e7ef;
   --registrar-muted: #718096;
+  --registrar-sidebar-width: 270px;
+  --registrar-zebra: #f1f5f9;
 
   display: flex;
   min-height: 100vh;
-
   background: #f4f7fb;
   color: #172b45;
-
   font-family: inherit;
   font-size: 13px;
   line-height: 1.5;
@@ -41,7 +40,7 @@
   inset: 0 auto 0 0;
   z-index: 30;
 
-  width: 270px;
+  width: var(--registrar-sidebar-width);
   height: 100vh;
 
   display: flex;
@@ -67,6 +66,13 @@
   color: #ffffff;
 
   box-shadow: 4px 0 24px rgba(10, 29, 54, 0.08);
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  transition:
+    transform 0.25s ease,
+    visibility 0.25s ease;
 }
 
 /* ========================================
@@ -114,7 +120,6 @@
 
 .registrar-brand strong {
   color: #ffffff;
-
   font-size: 23px;
   font-weight: 800;
   letter-spacing: 0.5px;
@@ -122,7 +127,6 @@
 
 .registrar-brand span {
   color: #e4bc5e;
-
   font-size: 12px;
   font-weight: 700;
 }
@@ -191,11 +195,13 @@
   flex: 1;
 }
 
+.registrar-nav-item svg {
+  flex-shrink: 0;
+}
+
 .registrar-nav-item.registrar-nav-active {
   background: rgba(214, 168, 73, 0.16);
-
   color: #f1c46d;
-
   border-left-color: var(--registrar-gold);
 }
 
@@ -209,7 +215,6 @@
 
 .registrar-sidebar-bottom {
   margin-top: auto;
-
   padding: 16px 15px 22px;
 
   border-top: 1px solid rgba(255, 255, 255, 0.12);
@@ -298,14 +303,73 @@
 ======================================== */
 
 .registrar-main {
-  width: calc(100% - 270px);
+  width: calc(100% - var(--registrar-sidebar-width));
+
   min-width: 0;
   min-height: 100vh;
 
-  margin-left: 270px;
+  margin-left: var(--registrar-sidebar-width);
 
   display: flex;
   flex-direction: column;
+
+  transition:
+    width 0.25s ease,
+    margin-left 0.25s ease;
+}
+
+/* ========================================
+   DESKTOP SIDEBAR TOGGLE
+======================================== */
+
+.registrar-desktop-sidebar-toggle {
+  display: grid;
+  place-items: center;
+
+  width: 40px;
+  height: 40px;
+
+  flex-shrink: 0;
+
+  padding: 0;
+
+  border: 1px solid #e0e7f0;
+  border-radius: 9px;
+
+  background: #ffffff;
+  color: var(--registrar-navy);
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.registrar-desktop-sidebar-toggle:hover {
+  background: #f1f5f9;
+  border-color: #c5d2e2;
+}
+
+.registrar-desktop-sidebar-toggle:active {
+  background: #e8eef6;
+}
+
+@media (min-width: 901px) {
+  .registrar-layout-collapsed .registrar-sidebar {
+    transform: translateX(-100%);
+    visibility: hidden;
+  }
+
+  .registrar-layout-collapsed .registrar-main {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .registrar-layout-collapsed .registrar-content {
+    max-width: none;
+  }
 }
 
 /* ========================================
@@ -568,6 +632,7 @@
 ======================================== */
 
 .registrar-panel {
+  min-width: 0;
   padding: 24px;
 }
 
@@ -809,23 +874,51 @@
 }
 
 /* ========================================
-   TABLES
-   UNIFORM TYPOGRAPHY
+   TABLE WRAPPER
 ======================================== */
 
 .registrar-table-wrapper {
   width: 100%;
+  min-width: 0;
 
   overflow-x: auto;
 
   margin-top: 20px;
+
+  border: 1px solid #dce4ee;
+  border-radius: 9px;
+
+  background: #ffffff;
+
+  scrollbar-width: thin;
+  scrollbar-color: #b8c6d8 #f1f5f9;
 }
+
+.registrar-table-wrapper::-webkit-scrollbar {
+  height: 7px;
+}
+
+.registrar-table-wrapper::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.registrar-table-wrapper::-webkit-scrollbar-thumb {
+  background: #b8c6d8;
+  border-radius: 10px;
+}
+
+/* ========================================
+   TABLES
+   NAVY HEADER + GOLD LINE + ZEBRA ROWS
+======================================== */
 
 .registrar-layout .registrar-table {
   width: 100%;
   min-width: 720px;
 
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
+
   text-align: left;
 
   font-family: inherit;
@@ -833,11 +926,15 @@
   line-height: 1.5;
 }
 
-.registrar-layout .registrar-table th {
-  padding: 12px 13px;
+/* Navy blue table header */
 
-  background: #f5f8fc;
-  color: #566982;
+.registrar-layout .registrar-table th {
+  padding: 14px 13px;
+
+  background: var(--registrar-navy);
+  color: #ffffff;
+
+  border-bottom: 3px solid var(--registrar-gold);
 
   font-family: inherit;
   font-size: 12px;
@@ -850,10 +947,12 @@
   white-space: nowrap;
 }
 
-.registrar-layout .registrar-table td {
-  padding: 12px 13px;
+/* Table body */
 
-  border-bottom: 1px solid #e8edf3;
+.registrar-layout .registrar-table td {
+  padding: 14px 13px;
+
+  border-bottom: 1px solid #e1e7ef;
 
   color: var(--registrar-navy);
 
@@ -863,14 +962,73 @@
   line-height: 1.5;
 
   vertical-align: middle;
+
+  transition: background-color 0.15s ease;
 }
 
-.registrar-layout .registrar-table tbody tr:last-child td {
+/* Standard zebra striping */
+
+.registrar-layout .registrar-table
+  > tbody > tr:nth-child(odd) > td {
+  background-color: #ffffff;
+}
+
+.registrar-layout .registrar-table
+  > tbody > tr:nth-child(even) > td {
+  background-color: var(--registrar-zebra);
+}
+
+/* Zebra striping that excludes expanded detail rows */
+
+@supports selector(tr:nth-child(2n of tr)) {
+  .registrar-layout .registrar-table
+    > tbody
+    > tr:nth-child(
+      odd of :not(:has(> td[colspan]))
+    )
+    > td {
+    background-color: #ffffff;
+  }
+
+  .registrar-layout .registrar-table
+    > tbody
+    > tr:nth-child(
+      even of :not(:has(> td[colspan]))
+    )
+    > td {
+    background-color: var(--registrar-zebra);
+  }
+}
+
+/* Hover effect */
+
+.registrar-layout .registrar-table
+  > tbody > tr:hover > td {
+  background-color: #e8eff7;
+}
+
+/* Expanded detail and empty state rows */
+
+.registrar-layout .registrar-table
+  > tbody > tr > td[colspan] {
+  background-color: #ffffff;
+}
+
+.registrar-layout .registrar-table
+  > tbody > tr:hover > td[colspan] {
+  background-color: #ffffff;
+}
+
+.registrar-layout .registrar-table
+  > tbody > tr:last-child > td {
   border-bottom: none;
 }
 
-.registrar-layout .registrar-table td strong {
-  font-size: 13px;
+/* Consistent table typography */
+
+.registrar-layout .registrar-table td strong,
+.registrar-layout .registrar-table td b {
+  font-size: inherit;
   font-weight: 600;
   line-height: 1.5;
 }
@@ -879,34 +1037,7 @@
   font-family: inherit;
 }
 
-/* Ensure nested subject tables match the main table. */
-
-.registrar-layout .registrar-table
-  .registrar-table {
-  font-size: 13px;
-}
-
-.registrar-layout .registrar-table
-  .registrar-table th {
-  font-size: 12px;
-}
-
-.registrar-layout .registrar-table
-  .registrar-table td {
-  font-size: 13px;
-}
-
-/* Subject codes must not appear oversized. */
-
-.registrar-layout .registrar-table
-  td strong,
-.registrar-layout .registrar-table
-  td b {
-  font-size: inherit;
-  font-weight: 600;
-}
-
-/* Consistent table action buttons. */
+/* Consistent table action buttons */
 
 .registrar-layout .registrar-table button {
   font-family: inherit;
@@ -915,7 +1046,7 @@
   line-height: 1.4;
 }
 
-/* Consistent status labels in table cells. */
+/* Consistent status labels */
 
 .registrar-layout .registrar-table
   td span[style*="border-radius"] {
@@ -924,16 +1055,32 @@
 }
 
 /* ========================================
-   EXPANDED ENROLLMENT REVIEW
+   NESTED SUBJECT TABLES
 ======================================== */
 
-/* The expanded review currently uses inline
-   styles in RegistrarDashboard.jsx.
+.registrar-layout .registrar-table
+  .registrar-table {
+  width: 100%;
+  font-size: 13px;
+}
 
-   These rules ensure that subject names,
-   codes, unit counts, and headers remain
-   consistent with the main table.
-*/
+.registrar-layout .registrar-table
+  .registrar-table th {
+  padding: 12px 13px;
+
+  background: var(--registrar-navy);
+  color: #ffffff;
+
+  border-bottom: 3px solid var(--registrar-gold);
+
+  font-size: 12px;
+}
+
+.registrar-layout .registrar-table
+  .registrar-table td {
+  padding: 12px 13px;
+  font-size: 13px;
+}
 
 .registrar-layout .registrar-panel
   .registrar-table {
@@ -954,6 +1101,183 @@
 .registrar-layout .registrar-panel
   .registrar-table th {
   font-size: 12px;
+}
+
+/* ========================================
+   EXPANDED ENROLLMENT DETAILS
+======================================== */
+
+.registrar-enrollment-details {
+  padding: 22px;
+
+  margin: 8px 0 14px;
+
+  background: #f4f7fb;
+
+  border: 1px solid #d6e1ef;
+  border-radius: 11px;
+}
+
+.registrar-enrollment-details-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+
+  margin-bottom: 18px;
+}
+
+.registrar-enrollment-student-name {
+  display: block;
+
+  color: var(--registrar-navy);
+
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.registrar-enrollment-student-meta {
+  display: block;
+
+  margin-top: 5px;
+
+  color: var(--registrar-muted);
+
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.registrar-enrollment-summary {
+  text-align: right;
+}
+
+.registrar-enrollment-summary strong {
+  display: block;
+
+  color: var(--registrar-navy);
+
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.registrar-enrollment-summary span {
+  display: block;
+
+  margin-top: 5px;
+
+  color: var(--registrar-muted);
+
+  font-size: 12px;
+}
+
+/* ========================================
+   ENROLLMENT INFORMATION CARD
+======================================== */
+
+.registrar-enrollment-information {
+  padding: 22px 24px;
+
+  margin-bottom: 18px;
+
+  background: #ffffff;
+
+  border: 1px solid #d6e1ef;
+  border-radius: 9px;
+}
+
+/* Three columns and two rows */
+
+.registrar-enrollment-details-grid {
+  display: grid;
+
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+
+  column-gap: 28px;
+  row-gap: 20px;
+}
+
+.registrar-enrollment-detail-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 7px;
+
+  min-width: 0;
+
+  padding: 0 0 17px;
+
+  border-bottom: 1px solid #e8edf3;
+}
+
+.registrar-enrollment-detail-item:nth-last-child(-n+3) {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.registrar-enrollment-detail-label {
+  display: block;
+
+  color: #68788c;
+
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.registrar-enrollment-detail-value {
+  color: var(--registrar-navy);
+
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.6;
+
+  overflow-wrap: anywhere;
+}
+
+.registrar-enrollment-detail-value strong {
+  color: var(--registrar-navy);
+  font-weight: 700;
+}
+
+.registrar-enrollment-detail-secondary {
+  display: block;
+
+  margin-top: 3px;
+
+  color: var(--registrar-muted);
+
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* ========================================
+   ENROLLMENT NOTICE
+======================================== */
+
+.registrar-enrollment-assignment-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+
+  padding: 14px 16px;
+
+  margin-bottom: 18px;
+
+  background: #fff5df;
+  color: #936000;
+
+  border: 1px solid #ecd6a3;
+  border-radius: 8px;
+
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.registrar-enrollment-assignment-notice svg {
+  flex-shrink: 0;
 }
 
 /* ========================================
@@ -992,6 +1316,7 @@
   margin: 0 0 10px;
 
   color: var(--registrar-navy);
+
   font-size: 16px;
   font-weight: 700;
 }
@@ -1160,6 +1485,9 @@
 .registrar-logout-modal {
   width: 100%;
   max-width: 420px;
+  max-height: calc(100vh - 40px);
+
+  overflow-y: auto;
 
   padding: 34px;
 
@@ -1191,6 +1519,7 @@
   margin: 0 0 11px;
 
   color: var(--registrar-navy);
+
   font-size: 20px;
   font-weight: 800;
 }
@@ -1243,6 +1572,14 @@
   color: #ffffff;
 }
 
+.registrar-modal-cancel:hover {
+  background: #f1f5f9;
+}
+
+.registrar-modal-confirm:hover {
+  background: #1b426d;
+}
+
 .registrar-modal-actions button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
@@ -1253,7 +1590,8 @@
 ======================================== */
 
 .registrar-layout button:focus-visible,
-.registrar-layout input:focus-visible {
+.registrar-layout input:focus-visible,
+.registrar-layout select:focus-visible {
   outline: 2px solid var(--registrar-gold);
   outline-offset: 2px;
 }
@@ -1277,6 +1615,10 @@
   .registrar-dashboard-columns {
     grid-template-columns: 1fr;
   }
+
+  .registrar-enrollment-details-grid {
+    column-gap: 20px;
+  }
 }
 
 /* ========================================
@@ -1286,12 +1628,12 @@
 @media (max-width: 900px) {
   .registrar-sidebar {
     transform: translateX(-100%);
-
-    transition: transform 0.25s ease;
+    visibility: hidden;
   }
 
   .registrar-sidebar-open {
     transform: translateX(0);
+    visibility: visible;
   }
 
   .registrar-sidebar-overlay {
@@ -1326,12 +1668,18 @@
     margin-left: 0;
   }
 
+  .registrar-desktop-sidebar-toggle {
+    display: none;
+  }
+
   .registrar-menu-button {
     display: grid;
     place-items: center;
 
     width: 39px;
     height: 39px;
+
+    flex-shrink: 0;
 
     border: 1px solid #e0e7f0;
     border-radius: 9px;
@@ -1340,6 +1688,10 @@
     color: var(--registrar-navy);
 
     cursor: pointer;
+  }
+
+  .registrar-menu-button:hover {
+    background: #f1f5f9;
   }
 
   .registrar-content {
@@ -1352,6 +1704,26 @@
 
   .registrar-profile-layout {
     grid-template-columns: 1fr;
+  }
+
+  .registrar-enrollment-details-grid {
+    grid-template-columns: repeat(
+      2,
+      minmax(0, 1fr)
+    );
+
+    column-gap: 20px;
+    row-gap: 18px;
+  }
+
+  .registrar-enrollment-detail-item:nth-last-child(-n+3) {
+    padding-bottom: 17px;
+    border-bottom: 1px solid #e8edf3;
+  }
+
+  .registrar-enrollment-detail-item:nth-last-child(-n+2) {
+    padding-bottom: 0;
+    border-bottom: none;
   }
 }
 
@@ -1431,5 +1803,45 @@
 
   .registrar-logout-modal {
     padding: 25px 20px;
+  }
+
+  .registrar-enrollment-details {
+    padding: 16px;
+  }
+
+  .registrar-enrollment-information {
+    padding: 18px;
+  }
+}
+
+@media (max-width: 540px) {
+  .registrar-enrollment-details-grid {
+    grid-template-columns: minmax(0, 1fr);
+
+    row-gap: 15px;
+  }
+
+  .registrar-enrollment-detail-item:nth-last-child(-n+2) {
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e8edf3;
+  }
+
+  .registrar-enrollment-detail-item:last-child {
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+}
+
+/* ========================================
+   REDUCED MOTION
+======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .registrar-sidebar,
+  .registrar-main,
+  .registrar-nav-item,
+  .registrar-desktop-sidebar-toggle,
+  .registrar-layout .registrar-table td {
+    transition: none;
   }
 }

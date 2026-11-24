@@ -19,10 +19,19 @@ const VALID_ROLES = [
 
 const VALID_STATUSES = ['active', 'inactive'];
 
+const VALID_YEAR_LEVELS = [1, 2, 3, 4];
+
+const VALID_STUDENT_TYPES = [
+  'Incoming',
+  'Continuing',
+  'Returning',
+  'Transferee',
+  'Shiftee'
+];
+
 const USER_COLUMNS =
   'user_id, auth_user_id, username, first_name, middle_name, last_name, role, status, must_change_password';
 
-// All routes require Administrator access.
 router.use(
   authenticateUser,
   requireRole('Administrator')
@@ -34,7 +43,6 @@ function normalizeStatus(status) {
     : '';
 }
 
-// Store UTC in the existing timestamp-without-time-zone column.
 function utcTimestamp() {
   return new Date()
     .toISOString()
@@ -98,7 +106,9 @@ router.post('/', async (req, res) => {
       middle_name,
       last_name,
       email,
-      role
+      role,
+      year_level,
+      student_type
     } = req.body || {};
 
     const cleanFirstName =
@@ -121,7 +131,6 @@ router.post('/', async (req, res) => {
         ? email.trim().toLowerCase()
         : '';
 
-    // Validate name fields.
     if (!cleanFirstName || !cleanLastName) {
       return res.status(400).json({
         message: 'First name and last name are required.'
@@ -139,7 +148,6 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Validate email.
     if (!cleanEmail) {
       return res.status(400).json({
         message: 'Email address is required.'
@@ -147,6 +155,7 @@ router.post('/', async (req, res) => {
     }
 
     if (
+      cleanEmail.length > 100 ||
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)
     ) {
       return res.status(400).json({
@@ -154,14 +163,42 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Validate PBCC role.
     if (!VALID_ROLES.includes(role)) {
       return res.status(400).json({
         message: 'Invalid PBCC user role.'
       });
     }
 
-    // Check for an existing PBCC account.
+    let cleanYearLevel = null;
+    let cleanStudentType = null;
+
+    // Validate student-specific fields.
+    if (role === 'Student') {
+      cleanYearLevel =
+        typeof year_level === 'number' ||
+        typeof year_level === 'string'
+          ? Number(year_level)
+          : null;
+
+      cleanStudentType =
+        typeof student_type === 'string'
+          ? student_type.trim()
+          : '';
+
+      if (!VALID_YEAR_LEVELS.includes(cleanYearLevel)) {
+        return res.status(400).json({
+          message: 'Please select a valid year level.'
+        });
+      }
+
+      if (!VALID_STUDENT_TYPES.includes(cleanStudentType)) {
+        return res.status(400).json({
+          message: 'Please select a valid student type.'
+        });
+      }
+    }
+
+    // Check whether the email already exists.
     const {
       data: existingUser,
       error: lookupError
@@ -181,13 +218,11 @@ router.post('/', async (req, res) => {
 
     if (existingUser) {
       return res.status(409).json({
-        message:
-          'An account with this email already exists.'
+        message: 'An account with this email already exists.'
       });
     }
 
-    // Create the account in Supabase Authentication.
-    // Every new account receives the same initial password.
+    // Create the Supabase Authentication account.
     const {
       data: authData,
       error: authError
@@ -211,52 +246,73 @@ router.post('/', async (req, res) => {
 
     const authUserId = authData.user.id;
 
-    // Create the linked PBCC application user.
-    // New accounts are always Active and must change
-    // their initial password before using the system.
+    // Create the application account and complete
+    // its student profile in one database transaction.
     const {
-      data: applicationUser,
+      data: accountData,
       error: insertError
-    } = await supabase
-      .from('users')
-      .insert({
-        auth_user_id: authUserId,
-        username: cleanEmail,
-        first_name: cleanFirstName,
-        middle_name: cleanMiddleName || null,
-        last_name: cleanLastName,
-        role,
-        status: 'active',
-        must_change_password: true
-      })
-      .select(USER_COLUMNS)
-      .single();
+    } = await supabase.rpc('create_pbcc_user', {
+      p_auth_user_id: authUserId,
+      p_username: cleanEmail,
+      p_first_name: cleanFirstName,
+      p_middle_name: cleanMiddleName || null,
+      p_last_name: cleanLastName,
+      p_role: role,
+      p_year_level: cleanYearLevel,
+      p_student_type: cleanStudentType
+    });
 
     if (insertError) {
       console.error(
-        'PBCC user creation error:',
+        'PBCC account creation error:',
         insertError
       );
 
-      // Attempt to remove the Supabase Auth account
-      // if creating the PBCC record fails.
-      const { error: cleanupError } =
-        await supabase.auth.admin.deleteUser(authUserId);
+      // Remove the authentication account when
+      // PostgreSQL explicitly rejects the transaction.
+      // For uncertain network failures, avoid deleting
+      // an account that may have been committed.
+      if (
+        insertError.code &&
+        /^[0-9A-Z]{5}$/.test(insertError.code) &&
+        !insertError.code.startsWith('08')
+      ) {
+        const { error: cleanupError } =
+          await supabase.auth.admin.deleteUser(authUserId);
 
-      if (cleanupError) {
+        if (cleanupError) {
+          console.error(
+            'Auth account cleanup failed:',
+            cleanupError
+          );
+        }
+      } else {
         console.error(
-          'Auth account cleanup failed:',
-          cleanupError
+          'Account creation outcome requires verification:',
+          authUserId
         );
       }
 
       return res.status(500).json({
         message:
-          'The PBCC user record could not be saved. Please contact the system administrator.'
+          'The PBCC account could not be confirmed. Please contact the system administrator.'
       });
     }
 
-    // Record which Administrator created the account.
+    if (!accountData?.user) {
+      console.error(
+        'Unexpected account creation response:',
+        authUserId
+      );
+
+      return res.status(500).json({
+        message: 'Account creation requires verification.'
+      });
+    }
+
+    const applicationUser = accountData.user;
+    const student = accountData.student || null;
+
     const auditLogged = await writeAuditLog(
       req.user.user_id,
       'CREATE_USER',
@@ -265,9 +321,12 @@ router.post('/', async (req, res) => {
 
     return res.status(201).json({
       message: auditLogged
-        ? 'User account created successfully.'
-        : 'User account created, but its audit log could not be saved.',
+        ? role === 'Student'
+          ? 'Student account and profile created successfully.'
+          : 'User account created successfully.'
+        : 'Account created, but its audit log could not be saved.',
       user: applicationUser,
+      student,
       auditLogged
     });
   } catch (error) {
@@ -280,7 +339,6 @@ router.post('/', async (req, res) => {
 });
 
 // PATCH /api/admin/users/:userId
-// Administrator can change ONLY role and status.
 router.patch('/:userId', async (req, res) => {
   try {
     const userId = Number(req.params.userId);
@@ -295,9 +353,6 @@ router.patch('/:userId', async (req, res) => {
     }
 
     const body = req.body || {};
-
-    // Prevent changes to personal information,
-    // email, password, and first-login status.
     const allowedFields = ['role', 'status'];
 
     if (
@@ -338,8 +393,7 @@ router.patch('/:userId', async (req, res) => {
 
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({
-        message:
-          'No valid account changes were provided.'
+        message: 'No valid account changes were provided.'
       });
     }
 
@@ -356,8 +410,7 @@ router.patch('/:userId', async (req, res) => {
       console.error('User lookup error:', lookupError);
 
       return res.status(500).json({
-        message:
-          'Unable to retrieve the selected account.'
+        message: 'Unable to retrieve the selected account.'
       });
     }
 
@@ -395,6 +448,15 @@ router.patch('/:userId', async (req, res) => {
       updates.status !==
         normalizeStatus(targetUser.status);
 
+    // Prevent conversion to Student without
+    // completing the required academic details.
+    if (roleChanged && updates.role === 'Student') {
+      return res.status(400).json({
+        message:
+          'Changing an existing account to Student requires a separate academic profile setup.'
+      });
+    }
+
     if (!roleChanged && !statusChanged) {
       return res.status(200).json({
         message: 'No account changes were necessary.',
@@ -431,7 +493,6 @@ router.patch('/:userId', async (req, res) => {
       });
     }
 
-    // Record each change separately in audit logs.
     const auditResults = [];
 
     if (roleChanged) {

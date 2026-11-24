@@ -9,12 +9,20 @@ if (!import.meta.env.VITE_API_URL) {
   );
 }
 
+// ========================================
+// SESSION STORAGE KEYS
+// ========================================
+
 export const SESSION_KEYS = {
   access: 'pbcc_access_token',
   refresh: 'pbcc_refresh_token',
   expires: 'pbcc_token_expires_at',
   user: 'pbcc_user'
 };
+
+// ========================================
+// AXIOS CLIENTS
+// ========================================
 
 const api = axios.create({
   baseURL: API_URL,
@@ -33,6 +41,10 @@ const refreshClient = axios.create({
 });
 
 let refreshPromise = null;
+
+// ========================================
+// SESSION MANAGEMENT
+// ========================================
 
 export function clearStoredSession() {
   localStorage.removeItem(SESSION_KEYS.access);
@@ -107,6 +119,10 @@ export function isAccessTokenExpiringSoon() {
   return expiresAt <= now + 120;
 }
 
+// ========================================
+// ACCESS TOKEN REFRESH
+// ========================================
+
 export async function refreshAccessToken() {
   if (refreshPromise) {
     return refreshPromise;
@@ -164,13 +180,18 @@ export async function refreshAccessToken() {
       // An invalid refresh token cannot be reused.
       // Keep tokens on network/server failures so
       // a temporary outage does not force logout.
-      if (status === 400 || status === 401 || status === 403) {
+      if (
+        status === 400 ||
+        status === 401 ||
+        status === 403
+      ) {
         const currentRefreshToken = localStorage.getItem(
           SESSION_KEYS.refresh
         );
 
         if (currentRefreshToken === refreshToken) {
           clearStoredSession();
+
           window.dispatchEvent(
             new Event('pbcc-session-expired')
           );
@@ -211,6 +232,10 @@ function isPublicAuthRequest(url = '') {
   );
 }
 
+// ========================================
+// REQUEST INTERCEPTOR
+// ========================================
+
 api.interceptors.request.use(async (config) => {
   const url = String(config.url || '');
 
@@ -225,8 +250,13 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
+// ========================================
+// RESPONSE INTERCEPTOR
+// ========================================
+
 api.interceptors.response.use(
   (response) => response,
+
   async (error) => {
     const originalRequest = error.config;
     const status = error.response?.status;
@@ -274,9 +304,16 @@ api.interceptors.response.use(
 
 export default api;
 
+// ========================================
+// AUTHENTICATION API
+// ========================================
+
 export const authApi = {
   login: (email, password) =>
-    api.post('/api/auth/login', { email, password }),
+    api.post('/api/auth/login', {
+      email,
+      password
+    }),
 
   refresh: () => refreshAccessToken(),
 
@@ -294,15 +331,32 @@ export const authApi = {
     })
 };
 
+// ========================================
+// STUDENT API
+// ========================================
+
 export const studentApi = {
-  periods: () => api.get('/api/student/periods'),
-  subjects: () => api.get('/api/student/subjects'),
-  grades: () => api.get('/api/student/grades')
+  periods: () =>
+    api.get('/api/student/periods'),
+
+  subjects: () =>
+    api.get('/api/student/subjects'),
+
+  grades: () =>
+    api.get('/api/student/grades')
 };
+
+// ========================================
+// HEALTH CHECK API
+// ========================================
 
 export const healthApi = {
   test: () => api.get('/api/test')
 };
+
+// ========================================
+// ADMINISTRATOR USER MANAGEMENT API
+// ========================================
 
 export const adminUsersApi = {
   list: () => api.get('/api/admin/users'),
@@ -312,26 +366,56 @@ export const adminUsersApi = {
     middle_name,
     last_name,
     email,
-    role
-  }) =>
-    api.post('/api/admin/users', {
+    role,
+    year_level,
+    student_type
+  }) => {
+    const payload = {
       first_name,
       middle_name,
       last_name,
       email,
       role
-    }),
+    };
+
+    // Include academic information only when
+    // creating a Student account.
+    if (role === 'Student') {
+      payload.year_level = Number(year_level);
+      payload.student_type = student_type;
+    }
+
+    return api.post(
+      '/api/admin/users',
+      payload
+    );
+  },
 
   update: (userId, changes) =>
-    api.patch(`/api/admin/users/${userId}`, changes)
+    api.patch(
+      `/api/admin/users/${userId}`,
+      changes
+    )
 };
 
+// ========================================
+// ADMINISTRATOR AUDIT LOG API
+// ========================================
+
 export const adminAuditApi = {
-  list: ({ page = 1, action = '', tableName = '' } = {}) =>
+  list: ({
+    page = 1,
+    action = '',
+    tableName = ''
+  } = {}) =>
     api.get('/api/admin/audit-logs', {
       params: {
         page,
-        ...(action ? { action } : {}),
+
+        ...(action
+          ? { action }
+          : {}),
+
         ...(tableName
           ? { table_name: tableName }
           : {})
@@ -339,6 +423,11 @@ export const adminAuditApi = {
     })
 };
 
+// ========================================
+// ADMINISTRATOR DASHBOARD API
+// ========================================
+
 export const adminDashboardApi = {
-  stats: () => api.get('/api/admin/dashboard/stats')
+  stats: () =>
+    api.get('/api/admin/dashboard/stats')
 };
